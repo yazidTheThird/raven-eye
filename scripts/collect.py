@@ -333,7 +333,7 @@ def normalize(source, item):
         currency = prices.get("currency_code")
         published = iso(item.get("date_created_gmt"), utc=True)
         url = item.get("permalink")
-        image = next((safe_url(i.get("thumbnail") or i.get("src")) for i in item.get("images", []) if safe_url(i.get("src"))), None)
+        image = next((safe_url(i.get("src")) or safe_url(i.get("thumbnail")) for i in item.get("images", []) if safe_url(i.get("src")) or safe_url(i.get("thumbnail"))), None)
         status, evidence = woo_status(item)
         variant_count = max(1, len(item.get("variations") or []))
         vendor = ", ".join(clean_tags(item.get("brands"))) or None

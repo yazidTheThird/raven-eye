@@ -30,6 +30,7 @@ USER_AGENT = "RavenEye/1.0 (+https://github.com/yazidTheThird/raven-eye; public-
 TIMEOUT = 25
 MAX_RESPONSE = 24 * 1024 * 1024
 RECHECK_LIMIT = 12
+MAX_PAGES = 4
 VALID_STATUSES = {"available", "presale", "upcoming", "backorder", "out_of_stock", "unknown"}
 
 
@@ -99,8 +100,14 @@ def detect_metal(title, detail=""):
     # products or describe a gold-coloured surface on a silver substrate.
     for candidate in [title, detail]:
         s = candidate.lower()
-        if re.search(r"(?:silver|gold)[ -]plated.{0,25}\bcopper\b", s) or re.search(r"\bcopper\b.{0,25}(?:silver|gold)[ -]plated", s):
+        # Explicit material terms in public German/Portuguese product metadata.
+        s = re.sub(r"\bsilber(?:münze|muenze|barren)?\b|\bprata\b", "silver", s)
+        s = re.sub(r"\bouro\b", "gold", s)
+        coating = r"(?:silver|gold)[ -](?:plated|gilded)"
+        if re.search(coating + r".{0,40}\bcopper\b", s) or re.search(r"\bcopper\b.{0,40}" + coating, s):
             return "Copper"
+        if re.search(coating + r".{0,40}\b(?:brass|base[ -]metal)\b", s) or re.search(r"\b(?:brass|base[ -]metal)\b.{0,40}" + coating, s):
+            return "Other"
         if re.search(r"\b(?:silver\s*(?:&|and|or)\s*(?:pure\s+)?gold|gold\s*(?:&|and|or)\s*(?:pure\s+)?silver)\b", s):
             return "Other"  # Mixed-metal sets or chance-based variants.
         if re.search(r"\bsilver\b", s):
@@ -113,11 +120,11 @@ def detect_metal(title, detail=""):
 
 def detect_category(title, product_type=""):
     s = (title + " " + product_type).lower()
-    if re.search(r"\b(bar|bars|barre|ingot|ingots)\b", s):
+    if re.search(r"\b(bar|bars|barre|ingot|ingots|barren|anlagebarren|lingote)\b", s):
         return "Bar"
     if re.search(r"\b(foil|blind box|sculpture|statue|figurine|coin.?card|medallion|note|pendant)\b", s):
         return "Collectible"
-    if re.search(r"\b(coin|coins|round|rounds)\b", s):
+    if re.search(r"\b(coin|coins|round|rounds|moeda|moedas|münze|münzen|silbermünze|silbermünzen|goldmünze|goldmünzen|anlagemünze)\b", s):
         return "Coin"
     return "Collectible"
 
@@ -158,11 +165,25 @@ def details(title, product_type, description, tags):
     }
 
 
+def excluded_title(title):
+    """Narrow, explicit non-release titles; safe for historical-data cleanup."""
+    # Accessories can mention coins and precious metals without containing any.
+    # Match the accessory itself, preserving e.g. "Silver Coin in Capsule".
+    if re.search(r"\b(?:hoodie|hoodies|coin[ -]+capsules?)\b", title, re.I):
+        return True
+    if re.search(r"\bguide\s*book\b", title, re.I):
+        # A book-themed bullion bar is a physical release, not a reference book.
+        physical_release = re.search(r"\d+(?:[.,]\d+)?\s*(?:oz|ounces?|g|grams?)\b", title, re.I) and re.search(r"\b(?:silver|gold)\s+(?:art\s+)?(?:bar|coin|round)\b", title, re.I)
+        if not physical_release:
+            return True
+    return bool(re.search(r"gift\s*(card|certificate)|display\s*(case|box)|empty\s*(box|capsule)|pool\s+allocated|wall\s+calendar", title, re.I))
+
+
 def is_relevant(title, product_type, description, tags):
     primary = (title + " " + product_type).lower()
-    if re.search(r"gift\s*(card|certificate)|display\s*(case|box)|empty\s*(box|capsule)", primary):
+    if excluded_title(title) or re.fullmatch(r"(?:calendar|book|catalogue|catalog|magazine)s?", product_type.strip(), re.I):
         return False
-    return bool(re.search(r"\b(coin|coins|silver|gold|platinum|palladium|copper|bullion|bar|bars|round|rounds|foil|medal|medallion|sculpture|statue|blind box)\b", primary))
+    return bool(re.search(r"\b(coin|coins|silver|gold|platinum|palladium|copper|bullion|bar|bars|round|rounds|foil|medal|medallion|sculpture|statue|blind box|silber|silbermünze|silbermünzen|goldmünze|goldmünzen|barren|anlagebarren|prata|ouro|moeda|moedas)\b", primary))
 
 
 def clean_tags(values):
@@ -240,11 +261,17 @@ def normalize(source, item):
     selected_variant_id = None
     price_is_from = False
     price_basis = "Seller's listed product price"
+    maker = None
+    maker_evidence = None
+    specification_values = {}
+    specification_evidence = {}
     if kind == "shopify":
         title = text(item.get("title"))
         description = text(item.get("body_html"))
         product_type = text(item.get("product_type"))
         tags = clean_tags(item.get("tags"))
+        # Only explicitly labelled material tags affect material classification.
+        product_type += " " + " ".join(tag for tag in tags if re.match(r"^METAL\s", tag, re.I))
         variants = item.get("variants") or []
         available = [v for v in variants if v.get("available") is True]
         selected = available or variants
@@ -268,11 +295,37 @@ def normalize(source, item):
         status, evidence = shopify_status(item)
         variant_count = len(variants)
         vendor = text(item.get("vendor")) or None
+        maker = vendor
+        if maker:
+            maker_evidence = "Shopify vendor / source-reported brand; not independently verified as the manufacturer."
     elif kind == "woocommerce":
         title = text(item.get("name"))
-        description = text(item.get("description") or item.get("short_description"))
+        short_description = text(item.get("short_description"))
+        description = " ".join(dict.fromkeys(v for v in [short_description, text(item.get("description"))] if v))
         tags = clean_tags(item.get("tags"))
-        product_type = " ".join(clean_tags(item.get("categories")))
+        product_type = " ".join(clean_tags(item.get("categories"))) + " " + short_description
+        for attribute in item.get("attributes") or []:
+            label = text(attribute.get("name")).lower()
+            values = ", ".join(clean_tags(attribute.get("terms") or attribute.get("options")))
+            if not values:
+                continue
+            if label in {"metal", "composition"}:
+                specification_values["metal"] = detect_metal(values)
+                product_type += " " + values
+                specification_evidence["metal"] = "Source-reported " + label + ": " + values
+            elif re.fullmatch(r"weight(?:\s*\((?:oz|g|kg)\))?", label):
+                weight = details(values, "", "", [])["weight"]
+                if weight:
+                    specification_values["weight"] = weight
+                    specification_evidence["weight"] = "Source-reported " + label + ": " + values
+            elif label in {"year", "years"} and re.fullmatch(r"20\d{2}", values):
+                specification_values["year"] = int(values)
+                specification_evidence["year"] = "Source-reported " + label + ": " + values
+            elif label == "mintage" and re.fullmatch(r"[\d][\d, .]*(?:\s*(?:pcs|pieces|coins|units))?", values, re.I):
+                count = int(re.sub(r"[^\d]", "", values))
+                if 0 < count < 100_000_000:
+                    specification_values["mintage"] = count
+                    specification_evidence["mintage"] = "Source-reported mintage: " + values
         prices = item.get("prices") or {}
         price = number(prices.get("price"))
         if price is not None:
@@ -284,22 +337,65 @@ def normalize(source, item):
         status, evidence = woo_status(item)
         variant_count = max(1, len(item.get("variations") or []))
         vendor = ", ".join(clean_tags(item.get("brands"))) or None
+        maker = vendor
+        if maker:
+            maker_evidence = "Source-reported WooCommerce brand; not independently verified as the manufacturer."
+        else:
+            for attribute in item.get("attributes") or []:
+                label = text(attribute.get("name")).lower()
+                taxonomy = text(attribute.get("taxonomy")).lower().removeprefix("pa_")
+                if label in {"brand", "manufacturer", "mint", "producer", "maker"} or taxonomy in {"brand", "manufacturer", "mint", "producer", "maker"}:
+                    maker = ", ".join(clean_tags(attribute.get("terms") or attribute.get("options"))) or None
+                    if maker:
+                        maker_evidence = "Source-reported WooCommerce " + (label or taxonomy) + " attribute."
+                        break
     else:
         title = text((item.get("title") or {}).get("rendered"))
         description = text((item.get("content") or {}).get("rendered"))
         tags = [v.removeprefix("product_tag-").replace("-", " ") for v in item.get("class_list", []) if v.startswith("product_tag-")]
         product_type = " ".join(v.removeprefix("product_cat-").replace("-", " ") for v in item.get("class_list", []) if v.startswith("product_cat-"))
+        for value in item.get("class_list", []):
+            if value.startswith("product_types-"):
+                material = value.removeprefix("product_types-").replace("-", " ")
+                product_type += " " + material
+                if detect_metal(material) != "Other":
+                    specification_values["metal"] = detect_metal(material)
+                    specification_evidence["metal"] = "Public product taxonomy: " + value
+            if value in {"type-bars", "type-coins", "type-rounds"}:
+                product_type += " " + value.removeprefix("type-")
+            match = re.fullmatch(r"product_weight-(\d+(?:[.,]\d+)?)-(oz|g|kg)", value)
+            if match:
+                specification_values["weight"] = match[1].replace(",", ".") + " " + match[2]
+                specification_evidence["weight"] = "Public product taxonomy: " + value
         yoast = item.get("yoast_head_json") or {}
         price = number(yoast.get("product_price_amount"))
         currency = yoast.get("product_price_currency")
         published = iso(item.get("date_gmt"), utc=True)
         url = item.get("link")
         image = next((safe_url(i.get("url")) for i in yoast.get("og_image", []) if safe_url(i.get("url"))), None)
+        media = (item.get("_embedded") or {}).get("wp:featuredmedia") or []
+        image = next((safe_url(i.get("source_url")) for i in media if isinstance(i, dict) and safe_url(i.get("source_url"))), image)
         status, evidence = wordpress_status(item)
         variant_count = 1
         vendor = None
+    product_type += " " + source.get("productTypeHint", "")
+    if kind == "wordpress" and {str(value) for value in item.get("categories", [])} & {str(value) for value in source.get("excludeCategoryIds", [])}:
+        return None
+    if any(urllib.parse.urlsplit(url or "").path.startswith(prefix) for prefix in source.get("excludePathPrefixes", [])):
+        return None
+    if any(value.casefold() in title.casefold() for value in source.get("excludeTitleContains", [])):
+        return None
     if not title or not safe_url(url) or not is_relevant(title, product_type, description, tags):
         return None
+    if image in source.get("excludeImageUrls", []):
+        image = None
+    # Overrides must be explicit source-specific tag mappings backed by evidence.
+    for tag, mapped_status in source.get("statusTags", {}).items():
+        if mapped_status in VALID_STATUSES and any(value.casefold() == tag.casefold() for value in tags):
+            status, evidence = mapped_status, "Public source tag explicitly indicates " + tag + "."
+            break
+    if source.get("catalogOnly"):
+        status, evidence = "unknown", "Catalogue/announcement source; this feed does not verify current retail availability."
     # Zero-price placeholders should not appear as free precious metals.
     if price == 0:
         price = None
@@ -310,10 +406,12 @@ def normalize(source, item):
         "sourceProductId": str(item["id"]),
         "sourceId": source["id"], "sourceName": source["name"],
         "title": title, "url": url, "image": image,
-        **details(title, product_type, description, tags),
+        **details(title, product_type, description, tags), **specification_values,
+        "specificationEvidence": specification_evidence,
         "price": price, "currency": currency, "status": status,
         "publishedAt": published, "description": description[:277] + ("…" if len(description) > 277 else ""),
         "tags": tags[:20], "statusEvidence": evidence, "vendor": vendor,
+        "maker": maker, "makerEvidence": maker_evidence,
         "variantCount": variant_count, "priceIsFrom": price_is_from,
         "selectedVariant": selected_variant, "selectedVariantId": selected_variant_id,
         "priceBasis": price_basis,
@@ -376,35 +474,92 @@ def item_url(source, product):
         return base + "/products/" + urllib.parse.quote(product.get("handle") or product["url"].rstrip("/").split("/")[-1]) + ".json"
     if source["type"] == "woocommerce":
         return base + "/wp-json/wc/store/v1/products/" + product["sourceProductId"]
-    return base + "/wp-json/wp/v2/product/" + product["sourceProductId"]
+    return base + "/wp-json/wp/v2/" + source.get("wpRestBase", "product") + "/" + product["sourceProductId"]
+
+
+def bounded_pages(source):
+    try:
+        return max(1, min(MAX_PAGES, int(source.get("maxPages", 1))))
+    except (TypeError, ValueError):
+        return 1
+
+
+def page_url(url, page):
+    if page == 1:
+        return url
+    parts = urllib.parse.urlsplit(url)
+    query = [(key, value) for key, value in urllib.parse.parse_qsl(parts.query, keep_blank_values=True) if key != "page"]
+    query.append(("page", str(page)))
+    return urllib.parse.urlunsplit(parts._replace(query=urllib.parse.urlencode(query)))
+
+
+def page_size(source):
+    query = dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(source.get("endpoint", "")).query))
+    key = "limit" if source["type"] == "shopify" else "per_page"
+    default = 250 if source["type"] == "shopify" else 100
+    try:
+        return max(1, min(default, int(query.get(key, source.get("limit", default)))))
+    except (TypeError, ValueError):
+        return default
 
 
 def fetch_source(source, old_products):
+    # A directory is a useful, explicit coverage gap, never a pretend live feed.
+    if source["type"] == "directory":
+        return [], 0, [], {"pagesFetched": 0, "paginationErrors": [], "skippedRechecks": 0}
+    if source["type"] not in {"shopify", "woocommerce", "wordpress"}:
+        raise ValueError("Unsupported public feed type")
     fetcher = Fetcher()
     source = copy.deepcopy(source)
-    payload = fetcher.json(source["endpoint"])
-    items = payload.get("products") if isinstance(payload, dict) and source["type"] == "shopify" else payload
-    if not isinstance(items, list) or not items:
-        raise ValueError("Feed returned no product list; previous observations preserved")
-    if source["type"] == "woocommerce":
-        # Woo Store API omits creation dates. These two shops also expose their
-        # WordPress product publication timestamps. Join by exact product ID;
-        # never derive publication from IDs, image paths or the printed year.
+    items_by_id = {}
+    pages_fetched = 0
+    pagination_errors = []
+    for page in range(1, bounded_pages(source) + 1):
         try:
-            date_url = source["url"].rstrip("/") + "/wp-json/wp/v2/product?per_page=100&orderby=date&order=desc&_fields=id,date_gmt"
-            dates = fetcher.json(date_url)
-            if isinstance(dates, list):
-                date_map = {str(v["id"]): v.get("date_gmt") for v in dates if isinstance(v, dict) and "id" in v}
-                for item in items:
-                    item["date_created_gmt"] = date_map.get(str(item.get("id")))
-        except (OSError, ValueError, RuntimeError, TypeError):
-            pass  # A missing date enrichment must not discard a valid offer.
+            payload = fetcher.json(page_url(source["endpoint"], page))
+            items = payload.get("products") if isinstance(payload, dict) and source["type"] == "shopify" else payload
+            if not isinstance(items, list) or (page == 1 and not items):
+                raise ValueError("Feed returned no product list; previous observations preserved")
+            if any(not isinstance(item, dict) or item.get("id") is None for item in items):
+                raise ValueError("Feed contained a product without a stable ID")
+        except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
+            if page == 1:
+                raise
+            pagination_errors.append("Page " + str(page) + ": " + str(exc)[:160])
+            break
+        pages_fetched += 1
+        new_ids = {str(item["id"]) for item in items} - items_by_id.keys()
+        # Retain the first observation if moving catalogue windows overlap.
+        for item in items:
+            items_by_id.setdefault(str(item["id"]), item)
+        if not items or len(items) < page_size(source):
+            break
+        if page > 1 and not new_ids:
+            pagination_errors.append("The feed repeated an earlier page; pagination stopped without duplicate listings.")
+            break
+    items = list(items_by_id.values())
+    if source["type"] == "woocommerce":
+        # Store API dates are optional. Join the public WordPress dates by exact
+        # ID, in bounded batches; a missing enrichment never discards an offer.
+        missing_dates = [str(item["id"]) for item in items if not item.get("date_created_gmt")]
+        for start in range(0, len(missing_dates), 100):
+            try:
+                query = urllib.parse.urlencode({"per_page": 100, "include": ",".join(missing_dates[start:start + 100]), "_fields": "id,date_gmt"})
+                date_url = source.get("feedBase", source["url"]).rstrip("/") + "/wp-json/wp/v2/product?" + query
+                dates = fetcher.json(date_url)
+                if isinstance(dates, list):
+                    date_map = {str(v["id"]): v.get("date_gmt") for v in dates if isinstance(v, dict) and "id" in v}
+                    for item in items:
+                        if not item.get("date_created_gmt") and date_map.get(str(item["id"])):
+                            item["date_created_gmt"] = date_map[str(item["id"])]
+            except (OSError, ValueError, RuntimeError, TypeError):
+                break  # Do not repeat an unsupported optional endpoint.
     if source["type"] == "shopify":
-        # Verified fallback is recorded in sources.json; meta.json checks currency
-        # in the same storefront on every run rather than guessing from geography.
+        # A configured currency is verified by the public storefront metadata
+        # when available; no currency is inferred from the source's geography.
         try:
             meta = fetcher.json(source.get("feedBase", source["url"]).rstrip("/") + "/meta.json")
-            if re.fullmatch(r"[A-Z]{3}", str(meta.get("currency", ""))):
+            if isinstance(meta, dict) and re.fullmatch(r"[A-Z]{3}", str(meta.get("currency", ""))):
                 source["currency"] = meta["currency"]
         except (OSError, ValueError, RuntimeError):
             pass
@@ -413,25 +568,21 @@ def fetch_source(source, old_products):
     if not normalized:
         raise ValueError("Feed parsed but contained no relevant releases; previous data preserved")
     seen = {p["id"] for p in normalized}
-    missing = sorted([p for p in old_products if p["id"] not in seen], key=lambda p: p.get("lastCheckedAt", ""))[:RECHECK_LIMIT]
+    missing = sorted([p for p in old_products if p["id"] not in seen], key=lambda p: p.get("lastCheckedAt", ""))
     warnings = []
-    for prior in missing:
+    # Shopify's single-product .json is metadata-only on these public shops.
+    # Do not repeatedly request it or advance a stock-check timestamp from it.
+    skipped_rechecks = len(missing) if source["type"] == "shopify" else 0
+    for prior in ([] if source["type"] == "shopify" else missing[:RECHECK_LIMIT]):
         try:
             item = fetcher.json(item_url(source, prior))
-            if source["type"] == "shopify":
-                item = item.get("product", item)
-                if not any(isinstance(v.get("available"), bool) for v in item.get("variants", [])):
-                    # Shopify's single-product .json often omits the public
-                    # availability flags. Such a response is metadata only,
-                    # not a fresh stock check; retain the previous timestamp.
-                    raise ValueError("Individual product feed omitted stock flags")
             current = normalize(source, item)
             if current:
                 normalized.append(current)
         except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
             # 404/unlisted is not evidence of a sale or zero stock.
             warnings.append(prior["id"] + ": " + type(exc).__name__)
-    return normalized, len(items), warnings
+    return normalized, len(items), warnings, {"pagesFetched": pages_fetched, "paginationErrors": pagination_errors, "skippedRechecks": skipped_rechecks}
 
 
 def merge_products(previous, observations, at, baseline=False):
@@ -441,6 +592,9 @@ def merge_products(previous, observations, at, baseline=False):
         current = copy.deepcopy(observed)
         if old and not current.get("publishedAt"):
             current["publishedAt"] = old.get("publishedAt")
+        if old and not current.get("maker") and old.get("maker"):
+            current["maker"] = old["maker"]
+            current["makerEvidence"] = old.get("makerEvidence")
         current.update({"firstSeenAt": old["firstSeenAt"] if old else at, "lastSeenAt": at, "lastCheckedAt": at})
         current["sourceDateInFuture"] = bool(current.get("publishedAt") and current["publishedAt"] > at)
         sample = {"at": at, "price": current["price"], "currency": current["currency"], "status": current["status"], "selectedVariantId": current.get("selectedVariantId"), "selectedVariant": current.get("selectedVariant")}
@@ -470,11 +624,13 @@ def merge_products(previous, observations, at, baseline=False):
 
 
 def collect(config, previous, at):
-    products = previous.get("products") or []
+    # Remove only explicit accessory/merchandise mistakes from older imports.
+    # Absence from a current feed never removes a legitimate historical release.
+    products = [p for p in previous.get("products", []) if not excluded_title(p.get("title", ""))]
     old_sources = {s["id"]: s for s in previous.get("sources", [])}
     results = {}
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
-        futures = {pool.submit(fetch_source, s, [p for p in products if p["sourceId"] == s["id"]]): s for s in config}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
+        futures = {pool.submit(fetch_source, s, [p for p in products if p["sourceId"] == s["id"]]): s for s in config if s["type"] != "directory"}
         for future in concurrent.futures.as_completed(futures):
             source = futures[future]
             try:
@@ -484,19 +640,35 @@ def collect(config, previous, at):
     sources = []
     for source in config:
         old = old_sources.get(source["id"], {})
+        prior_products = [p for p in products if p["sourceId"] == source["id"]]
+        health = {k: source[k] for k in ["id", "name", "url", "type", "coverage", "kind", "region", "evidenceUrl", "trackingReason"] if k in source}
+        health.update({"tracking": "directory" if source["type"] == "directory" else "automatic", "lastSuccess": old.get("lastSuccess"), "firstSuccess": old.get("firstSuccess") or min((p["firstSeenAt"] for p in prior_products), default=old.get("lastSuccess")), "count": len(prior_products), "observedCount": 0})
+        if source["type"] == "directory":
+            reason = source.get("trackingReason") or "Listed in the source directory; no supported automatic public feed is connected."
+            health.update({"status": "directory", "reason": reason, "trackingReason": reason, "lastAttempt": old.get("lastAttempt"), "error": None})
+            sources.append(health)
+            continue
         result, error = results[source["id"]]
-        health = {k: source[k] for k in ["id", "name", "url", "type", "coverage"]}
-        health.update({"status": "error" if error else "ok", "lastAttempt": at, "lastSuccess": old.get("lastSuccess"), "count": old.get("count", 0), "error": error})
+        health.update({"status": "error" if error else "ok", "lastAttempt": at, "error": error, "maxPages": bounded_pages(source), "windowLimit": bounded_pages(source) * page_size(source), "pagesFetched": 0})
         if result:
-            observations, fetched, warnings = result
+            observations, fetched, warnings, report = result
             products = merge_products(products, observations, at, baseline=not old.get("lastSuccess"))
-            health.update({"lastSuccess": at, "count": len(observations), "fetchedCount": fetched, "recheckErrors": len(warnings)})
+            health.update({"firstSuccess": health["firstSuccess"] or at, "lastSuccess": at, "count": sum(p["sourceId"] == source["id"] for p in products), "observedCount": len(observations), "fetchedCount": fetched, "recheckErrors": len(warnings), **report})
+            notes = []
+            if report["paginationErrors"]:
+                health["status"] = "partial"
+                health["error"] = " ".join(report["paginationErrors"])
+                notes.append("Only part of the configured catalogue window could be refreshed.")
             if warnings:
-                health["note"] = "Some older listings could not be rechecked; their last known values and check dates are retained."
+                notes.append("Some older listings could not be rechecked; their last known values and check dates are retained.")
+            if report["skippedRechecks"]:
+                notes.append("Older Shopify listings outside the fetched window retain their previous stock-check dates; the individual metadata endpoint is not a stock check.")
+            if notes:
+                health["note"] = " ".join(notes)
         sources.append(health)
     products.sort(key=lambda p: (p.get("publishedAt") or p["firstSeenAt"], p["id"]), reverse=True)
     return {"schemaVersion": 1, "generatedAt": at, "sources": sources, "products": products,
-            "methodology": {"firstSeen": "First successful Raven Eye observation, not the original release date.", "publishedAt": "Seller publication timestamp when exposed; not a verified mint launch date.", "status": "Seller feed observation at lastCheckedAt; a source outage or absent listing never implies sold out.", "prices": "Original seller currency; taxes, shipping, quantity tiers and local storefront conversion may differ. No currency conversion.", "coverage": "Bounded catalogue windows. Existing listings beyond those windows are rechecked in rotation; missing listings retain historical observations.", "baseline": "Initial imports do not create new-release alerts. New means first detected after that source's baseline."}}
+            "methodology": {"firstSeen": "First successful Raven Eye observation, not the original release date.", "publishedAt": "Seller publication timestamp when exposed; not a verified mint launch date.", "status": "Seller feed observation at lastCheckedAt; a source outage or absent listing never implies sold out.", "prices": "Original seller currency; taxes, shipping, quantity tiers and local storefront conversion may differ. No currency conversion.", "maker": "Reported brand/vendor or an explicit maker attribute from the seller's feed; not independent verification of the physical manufacturer.", "coverage": "Automatic sources use bounded catalogue windows (at most four pages). Older WooCommerce and WordPress listings are rechecked in rotation. Older Shopify listings retain their previous stock checks until they reappear in the window. Directory entries have no automatic product monitoring. Missing listings retain historical observations; this is not an exhaustive catalogue of every maker or release.", "baseline": "Initial imports do not create new-release alerts. New means first detected after that source's baseline."}}
 
 
 def main():
@@ -521,7 +693,8 @@ def main():
         print(f"{source['name']}: {source['status']}, {source['count']} observed" + (f" ({source['error']})" if source.get("error") else ""))
     print(f"Saved {len(result['products'])} tracked listings to {args.output}")
     # Healthy sources may still update when one provider is down.
-    return 0 if any(s["status"] == "ok" for s in result["sources"]) else 1
+    automatic = [s for s in result["sources"] if s.get("tracking") != "directory" and s["type"] != "directory"]
+    return 0 if not automatic or any(s["status"] in {"ok", "partial"} for s in automatic) else 1
 
 
 if __name__ == "__main__":

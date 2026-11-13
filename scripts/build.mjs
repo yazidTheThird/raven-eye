@@ -19,7 +19,11 @@ await mkdir(destination, { recursive: true });
 for (const name of required) {
   const output = path.join(destination, name);
   await mkdir(path.dirname(output), { recursive: true });
-  await cp(path.join(root, name), output);
+  if (name === 'data/releases.json') {
+    await writeFile(output, JSON.stringify(snapshot));
+  } else {
+    await cp(path.join(root, name), output);
+  }
 }
 for (const name of optional) {
   const source = path.join(root, name);

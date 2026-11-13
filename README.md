@@ -2,7 +2,7 @@
 
 A single-page numismatic release tracker for coins, bars, and precious-metal collectibles. Raven Eye collects public seller and mint listings, preserves its observations, and presents a searchable snapshot with product images, source links, prices, availability, and a personal watchlist.
 
-This standalone project is intended for its own repository, `yazidTheThird/raven-eye`, and its own GitHub Pages site. It contains a real data collector, the static interface, tests, and a GitHub Actions workflow. No account credentials, paid API keys, or application server are required.
+This standalone project lives at [yazidTheThird/raven-eye](https://github.com/yazidTheThird/raven-eye), with its interface at [Raven Eye](https://yazidthethird.github.io/raven-eye/). It contains a real data collector, the static interface, tests, and a GitHub Actions workflow. No account credentials, paid API keys, or application server are required.
 
 ## Reading the data
 
@@ -18,7 +18,9 @@ This standalone project is intended for its own repository, `yazidTheThird/raven
 | Price | The source price in its own currency. Shipping, tax, currency conversion, and checkout-specific pricing are not included. |
 | Mintage / weight | Source-provided or conservatively extracted product specifications; missing values stay blank. Shipping weight is not treated as precious-metal weight. |
 
-Coverage is a bounded selection of supported feeds, not the entire market. Each source reports its coverage and collection health. Multiple dealers can list the same release; they remain separate source listings so stock and prices keep their provenance. Products that disappear from a bounded feed are not automatically labelled sold out. The last successful observation remains visible and can become stale.
+The source directory covers sovereign mints, private makers, aftermarket colorizers, refiners, and dealers around the world. **Automatically tracked** sources have supported public catalogue feeds. **Directory only** sources link to the official website and state why they are not automatically collected. A directory entry is not evidence of live inventory tracking; it is excluded from the connected-source health total.
+
+Coverage is a bounded selection of supported feeds, not the entire market. Each automatic source reports its coverage, pagination limit, and collection health. Multiple dealers can list the same release; they remain separate source listings so stock and prices keep their provenance. Products that disappear from a bounded feed are not automatically labelled sold out. The last successful observation remains visible and can become stale. A reported brand comes from the source's vendor or manufacturer field; a retailer's vendor label is not independent verification of who physically made the coin.
 
 The initial collection is a baseline. Later observations can establish price and availability changes, including restocks and sellouts. A sellout signal means the listing changed status between observations; it does not measure units sold, collector demand, or the precise moment the stock changed. The first run cannot reconstruct earlier sales or price history.
 
@@ -45,7 +47,7 @@ styles.css                Responsive visual design
 raven.svg                 Raven Eye logo and favicon
 app.js                    Rendering and interactions
 lib.mjs                   Shared filtering and formatting logic
-sources.json              Supported source configuration
+sources.json              Automatic feeds and official source directory
 scripts/collect.py        Public-feed collector and history merge
 data/releases.json        Persistent source observations
 scripts/build.mjs         Static-only deployment packaging
@@ -72,5 +74,9 @@ GitHub may delay scheduled work, and inactive public repositories can have sched
 ## Adding sources
 
 Add only public, permitted endpoints to `sources.json`, using an adapter supported by `scripts/collect.py`. Test extraction against real products and ambiguous stock states before enabling a new source. Do not treat promotional copy as a live inventory count. Preserve first-seen timestamps and source identity when changing adapters.
+
+Automatic adapters support Shopify product feeds, WooCommerce Store API products, and WordPress product posts. `maxPages` sets a bounded window of up to four pages; each source's coverage text explains the scope. Request pacing respects published crawl delays. Blocked endpoints are not bypassed. A failed source keeps its previous observations and their actual last-check times.
+
+Use `type: "directory"` with `trackingReason` for verified official sources without a supported feed. Include `kind`, `region`, and `evidenceUrl` for the searchable directory. The collector makes no requests to directory-only sources. Feed availability can change, so a supported adapter is not a promise of perpetual access.
 
 Images and product names belong to their respective owners. Raven Eye links to the original listings and is an independent monitoring interface, not an affiliated storefront.

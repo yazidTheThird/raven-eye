@@ -1,0 +1,76 @@
+name: Refresh and deploy Raven Eye
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # UTC: 00:17, 06:17, 12:17, 18:17. GitHub may delay scheduled jobs.
+    - cron: '17 */6 * * *'
+
+concurrency:
+  group: raven-eye-refresh-and-pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  refresh-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pages: read
+    steps:
+      - name: Check out the current default branch
+        uses: actions/checkout@v6
+        with:
+          ref: main
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Test normalization, history, and interface logic
+        run: npm test
+      - name: Collect the latest source snapshots
+        run: python3 scripts/collect.py
+      - name: Build the static site
+        run: npm run build
+      - name: Save observed prices and availability history
+        shell: bash
+        run: |
+          git add data/releases.json
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Update Raven Eye observations"
+            git push origin HEAD:main
+          fi
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload the generated static site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    needs: refresh-and-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Deploy in the same run: commits made using GITHUB_TOKEN do not
+      # trigger another push workflow.
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="dark"><meta name="theme-color" content="#111715"><meta name="description" content="Raven Eye — a single watchtower for collectible coins, bullion bars, and numismatic releases."><title>Raven Eye — Numismatic intelligence</title><link rel="icon" href="./raven.svg" type="image/svg+xml"><link rel="stylesheet" href="./styles.css?v=color-focus-1"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="dark"><meta name="theme-color" content="#111715"><meta name="description" content="Raven Eye — a single watchtower for collectible coins, bullion bars, and numismatic releases."><title>Raven Eye — Numismatic intelligence</title><link rel="icon" href="./raven.svg" type="image/svg+xml"><link rel="stylesheet" href="./styles.css?v=copper-1"></head>
 <body>
 <aside class="sidebar">
   <a class="brand" href="./" aria-label="Raven Eye home"><img src="./raven.svg" alt=""><span>RAVEN EYE<small>NUMISMATIC INTELLIGENCE</small></span></a>
@@ -14,6 +14,7 @@
   <div class="sidebar-rule"></div>
   <div class="workspace-label">QUICK LENSES</div>
   <button class="lens" data-lens="color"><span>◈</span> Colorized silver coins</button>
+  <button class="lens" data-lens="copper"><span>◉</span> Copper releases</button>
   <button class="lens" data-lens="limited"><span>◇</span> Mintage ≤ 500</button>
   <button class="lens" data-lens="presale"><span>◷</span> Ahead of release</button>
   <div class="sidebar-bottom"><div class="watchtower-art" aria-hidden="true"><div class="orbit"></div><img src="./raven.svg" alt=""></div><h3>See what’s next.</h3><p>One place to follow the pieces<br>worth paying attention to.</p><a href="https://github.com/yazidTheThird/raven-eye" id="repo-link" target="_blank" rel="noopener noreferrer">View on GitHub <span>↗</span></a><div class="version">RAVEN EYE <span>V 1.0</span></div></div>
@@ -31,7 +32,7 @@
   <button class="stat" data-stat="out_of_stock"><span>OUT OF STOCK</span><strong id="stat-out">—</strong><small>At the latest source check <b>↘</b></small></button>
 </section>
 <section id="feed-section">
-<div class="focus-panel"><div class="focus-heading"><span class="eyebrow">YOUR FOCUS</span><p id="focus-description">Silver coins with explicit color-finish evidence from the listing.</p></div><div class="focus-options" role="group" aria-label="Release focus"><button data-focus="colorized-silver-coins" class="selected" aria-pressed="true">◈ Colorized silver coins</button><button data-focus="colorized-silver" aria-pressed="false">All colorized silver</button><button data-focus="all" aria-pressed="false">All releases</button></div></div>
+<div class="focus-panel"><div class="focus-heading"><span class="eyebrow">YOUR FOCUS</span><p id="focus-description">Silver coins with explicit color-finish evidence from the listing.</p></div><div class="focus-options" role="group" aria-label="Release focus"><button data-focus="colorized-silver-coins" class="selected" aria-pressed="true">◈ Colorized silver coins</button><button data-focus="colorized-silver" aria-pressed="false">All colorized silver</button><button data-focus="copper" aria-pressed="false">Copper</button><button data-focus="all" aria-pressed="false">All releases</button></div></div>
 <div class="feed-toolbar"><div class="feed-tabs" role="group" aria-label="Product type"><button class="selected" data-category="all">All types <span id="tab-total">—</span></button><button data-category="Coin">Coins</button><button data-category="Bar">Bars</button><button data-category="Collectible">Collectibles</button></div><div class="display-tools"><button id="grid-view" class="icon-button selected" aria-label="Grid view" aria-pressed="true">▦</button><button id="list-view" class="icon-button" aria-label="List view" aria-pressed="false">☷</button></div></div>
 <div class="filter-bar"><label class="search"><span aria-hidden="true">⌕</span><input type="search" id="search" placeholder="Search a release, brand, or theme…" aria-label="Search releases"><kbd>/</kbd></label><select id="metal" aria-label="Filter by metal"><option value="all">All metals</option><option>Silver</option><option>Gold</option><option>Platinum</option><option>Copper</option><option>Other</option></select><select id="status" aria-label="Filter by availability"><option value="all">All statuses</option><option value="available">Available</option><option value="presale">Presale</option><option value="upcoming">Coming soon</option><option value="backorder">Backorder</option><option value="out_of_stock">Out of stock</option><option value="unknown">Unconfirmed</option></select><select id="sourceKind" aria-label="Filter by source type"><option value="all">All source types</option></select><select id="source" aria-label="Filter by listing source"><option value="all">All listing sources</option></select></div>
 <div class="results-bar"><div><span id="result-count">Loading releases…</span><button id="clear-filters" class="text-button" hidden>Clear filters ×</button><span id="active-lens"></span></div><label>Sort by <select id="sort" aria-label="Sort releases"><option value="published">Latest source listing</option><option value="firstSeen">Recently detected</option><option value="changed">Recently changed</option><option value="mintage">Lowest known mintage</option><option value="title">Name A–Z</option></select></label></div>
@@ -46,5 +47,5 @@
 </div>
 <dialog id="detail-dialog" aria-label="Release details"><div id="detail-content"></div></dialog>
 <div class="toast" id="toast" role="status" hidden></div>
-<script type="module" src="./app.js?v=color-focus-1"></script>
+<script type="module" src="./app.js?v=copper-1"></script>
 </body></html>

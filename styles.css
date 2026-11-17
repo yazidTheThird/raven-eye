@@ -50,3 +50,6 @@ footer{display:flex;align-items:center;justify-content:space-between;gap:20px;bo
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;scroll-behavior:auto!important}}
 
 .filter-bar.focused{grid-template-columns:repeat(3,minmax(0,1fr))}@media(min-width:1800px){.filter-bar.focused{grid-template-columns:minmax(240px,1fr) 175px 180px 220px}}@media(max-width:760px){.filter-bar.focused{grid-template-columns:repeat(2,minmax(0,1fr))}.filter-bar.focused #source{grid-column:1/-1}}
+
+/* Copper focus keeps the dark palette, with a warm metal accent. */
+.focus-options button[data-focus="copper"].selected{background:#48352a;border-color:#ba8b65;color:#f3d6bc}.lens[data-lens="copper"].active{background:#382c25;color:#edc4a2}.lens[data-lens="copper"].active span{color:#dda778}

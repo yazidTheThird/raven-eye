@@ -1438,5 +1438,20 @@
     "trackingReason": "A supported public product feed was not verified; a dedicated catalogue adapter is needed.",
     "evidenceUrl": "https://www.jmbullion.com/about/",
     "verifiedAt": "2026-11-13"
+  },
+  {
+    "id": "metal2go",
+    "name": "Metal2go",
+    "url": "https://metal2go.net",
+    "type": "shopify",
+    "endpoint": "https://metal2go.net/collections/copper/products.json?limit=250",
+    "currency": "USD",
+    "limit": 250,
+    "maxPages": 4,
+    "kind": "Dealer",
+    "region": "United States",
+    "coverage": "Public Copper collection: copper coins, rounds, bars, medals, statues and other collectibles, including plated copper. Bounded to 4 pages / 1,000 feed entries per run; not the entire store catalogue. Collection membership alone does not establish material. Availability is seller-reported; presale and sold-out states are retained.",
+    "evidenceUrl": "https://metal2go.net/collections/copper",
+    "verifiedAt": "2026-11-17"
   }
 ]

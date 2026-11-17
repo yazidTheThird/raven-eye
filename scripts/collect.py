@@ -99,6 +99,35 @@ def number(value):
         return None
 
 
+def explicit_copper_metal(title):
+    """Conservative title-only substrate evidence, also safe for old records."""
+    s = re.sub(r"[‐‑–—]", "-", title.lower())
+    if re.search(r"\b(?:cupronickel|copper[ -]nickel|copper\s+alloy)\b", s):
+        return "Other"
+    # A copper-coloured or copper-plated surface is not a copper substrate.
+    s = re.sub(r"\bcopper[ -]+(?:plated|plating|colou?red|colou?r|toned?|finish)\b", "", s)
+    if not re.search(r"\bcopper\b", s):
+        return None
+    # Remove named precious-metal finishes before checking for mixed substrates.
+    s = re.sub(r"\b(?:silver|gold)[ -]+(?:plated|plating|gilded|enameled|enamelled)\b", "", s)
+    quantity = r"\d+(?:[.,/]\d+)?\s*(?:(?:troy|avdp)\s*)?(?:oz|ounces?|kilograms?|kg|grams?|g)\b"
+    purity = r"(?:\.?999\d*|99[.,]9\d*\s*%)"
+    modifiers = r"[\s,.-]*(?:(?:fine|pure)\s+)?"
+    forms = r"(?:coins?|rounds?|bars?|medals?|medallions?|bullion|sculptures?|statues?|ingots?)\b"
+    def substrate(metal):
+        return bool(re.search(r"(?:" + quantity + r"[\s,.-]*(?:" + purity + r")?|" + purity + r")" + modifiers + metal + r"\b", s)
+                    or re.search(r"\b(?:fine|pure)\s+" + metal + r"\b", s)
+                    or re.search(r"\b" + metal + r"\s+" + forms, s))
+    copper = substrate("copper")
+    if copper and (substrate("silver") or substrate("gold")
+                   or re.search(r"\b(?:with|and|insert)\b.{0,80}\b(?:silver|gold)\b", s)
+                   or re.search(r"\bcopper\s+core\b.*\b(?:silver|gold)\b|\b(?:silver|gold)\b.*\bcopper\s+core\b", s)):
+        return "Other"  # A copper core plus a silver coin is a mixed object.
+    if re.search(r"\b(?:copper\s*(?:&|and)\s*silver|silver\s*(?:&|and)\s*copper)\b", s):
+        return "Other"
+    return "Copper" if copper else None
+
+
 def detect_metal(title, detail=""):
     # Examine the product title/type before the prose, which may mention other
     # products or describe a gold-coloured surface on a silver substrate.
@@ -107,6 +136,11 @@ def detect_metal(title, detail=""):
         # Explicit material terms in public German/Portuguese product metadata.
         s = re.sub(r"\bsilber(?:münze|muenze|barren)?\b|\bprata\b", "silver", s)
         s = re.sub(r"\bouro\b", "gold", s)
+        explicit_copper = explicit_copper_metal(s)
+        if explicit_copper is not None:
+            return explicit_copper
+        # Do not classify a decorative copper colour or alloy as pure copper.
+        s = re.sub(r"\bcopper[ -]+(?:plated|plating|colou?red|colou?r|toned?|finish)\b", "", s)
         coating = r"(?:silver|gold)[ -](?:plated|gilded)"
         if re.search(coating + r".{0,40}\bcopper\b", s) or re.search(r"\bcopper\b.{0,40}" + coating, s):
             return "Copper"
@@ -116,9 +150,11 @@ def detect_metal(title, detail=""):
             return "Other"  # Mixed-metal sets or chance-based variants.
         if re.search(r"\bsilver\b", s):
             return "Silver"
-        for metal in ["Platinum", "Palladium", "Gold", "Copper"]:
+        for metal in ["Platinum", "Palladium", "Gold"]:
             if re.search(r"\b" + metal.lower() + r"\b", s):
                 return metal if metal != "Palladium" else "Other"
+        if s.strip() == "copper":  # A structured metal field is unambiguous.
+            return "Copper"
     return "Other"
 
 
@@ -139,6 +175,10 @@ def detect_category(title, product_type="", default="Collectible"):
 
 def details(title, product_type, description, tags):
     primary = title + " " + product_type
+    title_composition = explicit_copper_metal(title)
+    metal = title_composition or detect_metal(title)
+    if metal == "Other" and title_composition is None:
+        metal = detect_metal(product_type, description)
     weight = re.search(r"(?<!\w)(\d+(?:[.,]\d+)?(?:/\d+)?)\s*(?:troy\s*)?(oz|ounces?|kilograms?|kg|grams?|gr|gm|g)\b", primary, re.I)
     if not weight:
         weight = re.search(r"\bweight\s*:?\s*(\d+(?:[.,]\d+)?(?:/\d+)?)\s*(?:troy\s*)?(oz|ounces?|kilograms?|kg|grams?|gr|gm|g)\b", description, re.I)
@@ -165,7 +205,7 @@ def details(title, product_type, description, tags):
         # Rarity-tier mintages are not the edition size of the entire blind box.
         mintage_number = None
     return {
-        "metal": detect_metal(primary, description),
+        "metal": metal,
         "category": detect_category(title, product_type),
         "weight": weight_text,
         "year": int(year[1]) if year else None,
@@ -329,7 +369,7 @@ def normalize(source, item):
             values = ", ".join(clean_tags(attribute.get("terms") or attribute.get("options")))
             if not values:
                 continue
-            if label in {"metal", "composition"}:
+            if label in {"metal", "metal type", "composition"}:
                 specification_values["metal"] = detect_metal(values)
                 product_type += " " + values
                 specification_evidence["metal"] = "Source-reported " + label + ": " + values
@@ -422,6 +462,10 @@ def normalize(source, item):
     if currency and not re.fullmatch(r"[A-Z]{3}", currency):
         currency = None
     specifications = {**details(title, product_type, description, tags), **specification_values}
+    title_metal = explicit_copper_metal(title)
+    if title_metal is not None and specification_evidence.get("metal", "").startswith("Public product taxonomy:"):
+        specifications["metal"] = title_metal
+        specification_evidence["metal"] = "Explicit title composition: " + title
     if specifications["metal"] == "Other" and not re.search(r"\b(?:silver|gold|platinum|palladium|copper|brass|silber|prata|ouro)\b", title + " " + product_type + " " + description, re.I):
         material_tags = [tag for tag in tags if re.fullmatch(r"(?:metal\s*[:\-]?\s*)?(?:silver|gold|platinum|palladium|copper|silber|prata|ouro)(?:\s+(?:coins?|rounds?|bars?|bullion))?", tag, re.I)]
         material_values = {detect_metal(tag) for tag in material_tags} - {"Other"}
@@ -776,6 +820,15 @@ def collect(config, previous, at):
     # outside today's windows. The title is retained verbatim; this is a local
     # metadata correction, not a new observation or a stock/price check.
     for product in products:
+        metal = explicit_copper_metal(product.get("title", ""))
+        evidence = (product.get("specificationEvidence") or {}).get("metal", "")
+        structured = re.match(r"Source-reported (?:metal|metal type|composition):\s*(.+)", evidence)
+        if metal is not None and (not structured or detect_metal(structured[1]) == metal):
+            product["metal"] = metal
+            if "colorizedSilver" in product:
+                product["colorizedSilver"] = False
+            if "isColorizedSilverCoin" in product:
+                product["isColorizedSilverCoin"] = False
         category = detect_category(product.get("title", ""), default=None)
         if category and "category" in product:
             product["category"] = category

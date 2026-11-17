@@ -311,6 +311,52 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(c.detect_metal("Silver-plated Brass Coin"), "Other")
         self.assertEqual(c.detect_metal("Base Metal Coin with Gold Plated Finish"), "Other")
 
+    def test_explicit_copper_composition_outranks_names_and_mixed_taxonomy(self):
+        titles = [
+            "Scottsdale Cowboy with 250th Privy 1 oz Copper Round",
+            "1870-S $3 GOLD TRIBUTE – 1 AVDP OUNCE – .999 FINE COPPER – CU",
+            "Silver Breaks the $100 Barrier – 5 oz .999 Copper High Relief Medal",
+            "Hotel & Casino $50 Poker Chip 1 oz Fine Copper Colorized Round",
+            "2025 China ANA Colorized Panda with Silver Plating 1 oz Copper BU",
+            "Premium Bull & Bear 1 oz Copper High Relief Silver Enameled Round",
+        ]
+        for title in titles:
+            with self.subTest(title=title):
+                item = feed_item("woocommerce", 1)
+                item.update({"name": title, "categories": [{"name": "Silver Coins and Gold Collectibles"}]})
+                normalized = c.normalize(source("woocommerce"), item)
+                self.assertEqual(normalized["metal"], "Copper")
+                self.assertFalse(normalized["colorizedSilver"])
+                self.assertFalse(normalized["isColorizedSilverCoin"])
+
+    def test_copper_surfaces_names_alloys_and_mixed_objects_are_not_pure_copper(self):
+        for title, expected in [
+            ("1 oz Copper Plated Silver Coin", "Silver"),
+            ("Panda 30g .999 Silver BU Antique Copper Plated", "Silver"),
+            ("The Goonies Copper Bones Skeleton Key Silver Coin", "Silver"),
+            ("1 oz Copper-Nickel Commemorative Coin", "Other"),
+            ("1 oz Copper Coloured Medal", "Other"),
+            ("Copper Horizon", "Other"),
+            ("1 oz Silver Coin with 14 oz Copper Core", "Other"),
+            ("Saint Michael 1 Kilogram Copper with 1 oz Silver Libertad Coin", "Other"),
+            ("Saint Michael 1 Kilogram Copper with 2024 1 oz Mexican Silver Libertad Coin", "Other"),
+        ]:
+            with self.subTest(title=title):
+                self.assertEqual(c.detect_metal(title), expected)
+
+    def test_woo_metal_type_attribute_and_title_taxonomy_priority(self):
+        self.assertEqual(c.details("KITSUNE", "Copper", "", [])["metal"], "Copper")
+        self.assertEqual(c.details("1 oz Silver Coin", "Copper Coins and Silver Coins", "", [])["metal"], "Silver")
+        item = feed_item("woocommerce", 1)
+        item.update({"name": "Cowboy Round", "attributes": [{"name": "Metal Type", "terms": [{"name": "Copper"}]}]})
+        normalized = c.normalize(source("woocommerce"), item)
+        self.assertEqual(normalized["metal"], "Copper")
+        self.assertEqual(normalized["specificationEvidence"]["metal"], "Source-reported metal type: Copper")
+        item = feed_item("wordpress", 2)
+        item["title"] = {"rendered": "1 oz .999 Fine Copper Round"}
+        item["class_list"].append("product_types-silver")
+        self.assertEqual(c.normalize(source("wordpress"), item)["metal"], "Copper")
+
     def test_merchandise_and_accessories_do_not_hide_physical_releases(self):
         accessories = [
             "Silver Tag Original Hoodie",
@@ -364,6 +410,27 @@ class CollectorTests(unittest.TestCase):
         with patch.object(c, "fetch_source", side_effect=TimeoutError("offline")):
             result = c.collect([source()], {"products": [prior_product]}, "later")
         self.assertEqual(result["products"][0], prior_product)
+
+    def test_retained_copper_correction_preserves_observations_and_source_composition(self):
+        title = "Silver Breaks the $100 Barrier – 5 oz .999 Copper High Relief Medal"
+        original = c.merge_products([], [{**product(), "title": title, "metal": "Silver",
+                                         "isColorized": True, "colorizedSilver": True,
+                                         "isColorizedSilverCoin": True}], "before")[0]
+        protected = {**original, "id": "test:2", "specificationEvidence": {"metal": "Source-reported composition: Silver"}}
+        generic = {**original, "id": "test:3", "title": "KITSUNE", "description": "Made from .999 fine copper"}
+        with patch.object(c, "fetch_source", side_effect=TimeoutError("offline")):
+            result = c.collect([source()], {"products": [original, protected, generic]}, "later")
+        indexed = {p["id"]: p for p in result["products"]}
+        corrected, unchanged, generic_result = [indexed[key] for key in ["test:1", "test:2", "test:3"]]
+        self.assertEqual(corrected["metal"], "Copper")
+        self.assertFalse(corrected["colorizedSilver"])
+        self.assertFalse(corrected["isColorizedSilverCoin"])
+        self.assertTrue(corrected["isColorized"])
+        for key in ["firstSeenAt", "lastSeenAt", "lastCheckedAt", "publishedAt", "history", "change"]:
+            self.assertEqual(corrected[key], original[key])
+        self.assertEqual(original["metal"], "Silver")
+        self.assertEqual(unchanged, protected)
+        self.assertEqual(generic_result, generic)
 
     def test_blind_box_rarity_is_not_whole_edition_mintage(self):
         data = c.details("Scooby-Doo Blind Box", "Collectible Coins", "Rare gold chase with a mintage of just 30 pieces per applicable tier; mintages ranging from 1,800 to 30 pieces", [])

@@ -4,7 +4,7 @@ export const escapeHTML=v=>String(v??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<'
 export function safeURL(value){try{const u=new URL(value);return ['https:','http:'].includes(u.protocol)?u.href:''}catch{return ''}}
 export const dateValue=v=>Number.isFinite(Date.parse(v))?Date.parse(v):0;
 export const searchable=p=>[p.title,p.sourceName,p.maker,p.sourceKind,p.description,...(p.tags||[])].join(' ').toLowerCase();
-export const FOCUS_LABELS={'colorized-silver-coins':'Colorized silver coins','colorized-silver':'All colorized silver',all:'All releases'};
+export const FOCUS_LABELS={'colorized-silver-coins':'Colorized silver coins','colorized-silver':'All colorized silver',copper:'Copper coins & collectibles',all:'All releases'};
 const colorTerms='(?:colou?ri[sz](?:ed|ation)|colou?red|enamel(?:led|ed)?|(?:full[ -])?colou?r[ -](?:print(?:ed|ing)?|finish)|(?:digital|uv)[ -]print(?:ed|ing)?)';
 const colorWords=new RegExp('\\b'+colorTerms+'\\b','i');
 const packagingWords='(?:box(?:es)?|packaging|certificate|coa|case|capsule|booklet|card)';
@@ -24,7 +24,7 @@ export function isColorizedSilver(p,coinsOnly=false){
  if(coinsOnly&&p.category!=='Coin')return false;
  return Boolean(colorEvidence(p));
 }
-export function matchesFocus(p,focus='all'){return focus==='colorized-silver-coins'?isColorizedSilver(p,true):focus==='colorized-silver'?isColorizedSilver(p):true;}
+export function matchesFocus(p,focus='all'){return focus==='colorized-silver-coins'?isColorizedSilver(p,true):focus==='colorized-silver'?isColorizedSilver(p):focus==='copper'?p.metal==='Copper':true;}
 export function focusForCategory(focus,category){return focus==='colorized-silver-coins'&&['Bar','Collectible'].includes(category)?'colorized-silver':focus;}
 export const isAutomaticSource=s=>s.tracking!=='directory'&&s.status!=='directory'&&s.type!=='directory';
 export function sourceCoverage(sources){const automatic=sources.filter(isAutomaticSource);return {automatic,healthy:automatic.filter(s=>s.status==='ok'),directory:sources.filter(s=>!isAutomaticSource(s))};}

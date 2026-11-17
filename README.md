@@ -26,7 +26,7 @@ Initial source imports, newly added focused collections, and discoveries from ro
 
 ## Colorized silver focus and retrieval
 
-The default view is **Colorized silver coins**. **All colorized silver** also includes bars and other physical collectibles; **All releases** includes every retained listing. Material, product form, and color finish are separate checks. Silver-plated copper and gilding alone do not qualify as colorized silver coins. Unknown finishes remain discoverable in All releases.
+The default view is **Colorized silver coins**. **All colorized silver** also includes bars and other physical collectibles; **Copper** includes copper coins, rounds, bars, medals, statues, and other physical collectibles; **All releases** includes every retained listing. Material, product form, and color finish are separate checks. Silver-plated copper and gilding alone do not qualify as colorized silver coins. Unknown finishes remain discoverable in All releases.
 
 Classification reads the full product description, all available tags, and structured finish attributes before shortening text for display. Positive finish evidence is shown in the details and exported to CSV. Packaging colors and generic “art coin” wording are not sufficient. This is text-based classification: it does not infer a finish from images, and sources with incomplete metadata can still have missed matches.
 
@@ -39,6 +39,12 @@ Retrieval has three layers:
 Listings from overlapping feeds merge using the seller's original product ID, preserving first-seen dates and history. Different sellers' offers remain separate. Sources & coverage exposes capped windows, focused-feed results, and deeper-scan progress, making incomplete retrieval visible. Directory-only sources still have no automatic product monitoring.
 
 Watchlist selections are stored in the browser on this device. They do not sync between browsers and do not send email or push notifications.
+
+## Copper tracking
+
+The **Copper** focus and sidebar shortcut include plain, colorized, and silver- or gold-plated copper products. Category, stock, source, search, and watchlist filters work within that focus. Copper-plated silver, copper-colored finishes, and copper-nickel alloys are not treated as copper bullion. Explicit composition takes precedence over theme words such as “Gold Tribute” or broad shop categories.
+
+In addition to copper listings found in the existing mixed-metal feeds, Raven Eye reads Metal2go’s public Copper collection, bounded to four pages of 250 entries per run. Listing-level material evidence still controls classification because that collection also contains other metals. These are seller listings, not a count of unique designs across shops. First-seen, publication, availability, and price-history rules are the same as for silver.
 
 ## Local use
 

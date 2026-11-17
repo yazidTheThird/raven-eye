@@ -52,3 +52,30 @@ test('all releases bypasses focus and other lenses compose with focused listings
  assert.deepEqual(filterProducts(colorListings,{focus:'colorized-silver-coins',lens:'limited'}).map(p=>p.id),['silver']);
  assert.deepEqual(filterProducts(colorListings,{focus:'colorized-silver',view:'watchlist'},new Set(['bar','gold'])).map(p=>p.id),['bar']);
 });
+
+const copperListings=[
+ {id:'copper-round',title:'Liberty 1 oz copper round',metal:'Copper',category:'Coin',isColorized:false,status:'available',mintage:5000,sourceId:'mint-a'},
+ {id:'copper-statue',title:'Agamemnon helmet 100 g copper sculpture',metal:'Copper',category:'Collectible',isColorized:false,status:'presale',mintage:199,sourceId:'mint-a'},
+ {id:'copper-bar',title:'Colorized copper art bar',metal:'Copper',category:'Bar',isColorized:true,status:'out_of_stock',mintage:300,sourceId:'mint-b'},
+ {id:'plated-copper',title:'Silver-plated copper lucky cat coin',metal:'Copper',category:'Coin',status:'presale',sourceId:'mint-b'},
+ {id:'silver-coin',title:'Colorized silver coin',metal:'Silver',category:'Coin',status:'presale'},
+ {id:'gold-coin',title:'Gold coin with copper-colored art',metal:'Gold',category:'Coin'},
+ {id:'brass',title:'White brass collectible',metal:'Other',category:'Collectible'},
+ {id:'unknown',title:'Copper-tone helmet',metal:'Other',category:'Collectible'}
+];
+test('copper focus includes plain and colorized copper forms without admitting other metals',()=>{
+ assert.deepEqual(filterProducts(copperListings,{focus:'copper'}).map(p=>p.id),['copper-round','copper-statue','copper-bar','plated-copper']);
+ assert.equal(filterProducts(copperListings,{focus:'all'}).length,copperListings.length);
+});
+test('copper category tabs keep the copper focus for coins, bars and collectibles',()=>{
+ for(const [category,expected] of [['Coin',['copper-round','plated-copper']],['Bar',['copper-bar']],['Collectible',['copper-statue']]]){
+  const focus=focusForCategory('copper',category);assert.equal(focus,'copper');
+  assert.deepEqual(filterProducts(copperListings,{focus,category}).map(p=>p.id),expected);
+ }
+});
+test('copper focus composes with availability, search, mintage, source and saved listings',()=>{
+ assert.deepEqual(filterProducts(copperListings,{focus:'copper',lens:'presale'}).map(p=>p.id),['copper-statue','plated-copper']);
+ assert.deepEqual(filterProducts(copperListings,{focus:'copper',lens:'limited',query:'helmet',source:'mint-a'}).map(p=>p.id),['copper-statue']);
+ assert.deepEqual(filterProducts(copperListings,{focus:'copper',status:'out_of_stock'}).map(p=>p.id),['copper-bar']);
+ assert.deepEqual(filterProducts(copperListings,{focus:'copper',view:'watchlist'},new Set(['copper-statue','copper-bar','silver-coin'])).map(p=>p.id),['copper-statue','copper-bar']);
+});

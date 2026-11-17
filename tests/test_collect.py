@@ -1,4 +1,6 @@
 import importlib.util
+import io
+import json
 import pathlib
 import unittest
 from unittest.mock import patch
@@ -25,6 +27,137 @@ def feed_item(kind, item_id):
 
 
 class CollectorTests(unittest.TestCase):
+    def test_target_collection_deduplicates_and_baselines_only_extra_products(self):
+        endpoint = "https://example.org/collections/coloured/products.json?limit=2"
+        config = source(discoveryFeeds=[{"id": "colour", "label": "Coloured coins", "endpoint": endpoint, "maxPages": 2}])
+        def get(url):
+            if url.endswith("/meta.json"):
+                return {"currency": "USD"}
+            if "collections" in url:
+                ids = [3] if "page=2" in url else [2, 3]
+            else:
+                ids = [1, 2]
+            return {"products": [feed_item("shopify", i) for i in ids]}
+        with patch.object(c.Fetcher, "json", side_effect=get):
+            items, fetched, _, report = c.fetch_source(config, [])
+        self.assertEqual([p["id"] for p in items], ["test:1", "test:2", "test:3"])
+        self.assertEqual(fetched, 3)
+        self.assertFalse(items[1]["baselineDiscovery"])
+        self.assertTrue(items[2]["baselineDiscovery"])
+        self.assertEqual(items[2]["discoveryFeedId"], "colour")
+        self.assertTrue(report["latestWindowCapped"])
+        # A repeated page is not misrepresented as an exhausted catalogue.
+        self.assertEqual(report["discoveryFeeds"][0]["status"], "partial")
+
+    def test_completed_discovery_baseline_allows_later_new_events(self):
+        endpoint = "https://example.org/collections/coloured/products.json?limit=2"
+        config = source(discoveryFeeds=[{"id": "colour", "endpoint": endpoint}])
+        previous_health = {"discoveryFeeds": [{"id": "colour", "endpoint": endpoint, "baselineComplete": True, "maxPages": 1}]}
+        def get(url):
+            if url.endswith("/meta.json"):
+                return {"currency": "USD"}
+            return {"products": [feed_item("shopify", 2 if "collections" in url else 1)]}
+        with patch.object(c.Fetcher, "json", side_effect=get):
+            items, _, _, _ = c.fetch_source(config, [], previous_health)
+        self.assertFalse(items[1]["baselineDiscovery"])
+        self.assertEqual(c.merge_products([], items, "now")[1]["change"]["type"], "new")
+
+    def test_rotating_backfill_resumes_failed_page_and_preserves_old_import_history(self):
+        config = source(catalogueBackfill={"pagesPerRun": 3, "maxPage": 100})
+        calls = []
+        def get(url):
+            calls.append(url)
+            if url.endswith("/meta.json"):
+                return {"currency": "USD"}
+            page = int(dict(c.urllib.parse.parse_qsl(c.urllib.parse.urlsplit(url).query)).get("page", 1))
+            if page == 4:
+                raise TimeoutError("try this page next time")
+            return {"products": [feed_item("shopify", page * 2 - 1), feed_item("shopify", page * 2)]}
+        with patch.object(c.Fetcher, "json", side_effect=get):
+            items, _, _, report = c.fetch_source(config, [], {"nextBackfillPage": 3})
+        self.assertEqual(report["nextBackfillPage"], 4)
+        self.assertEqual(report["backfillPagesFetched"], 1)
+        self.assertFalse(any("page=2" in url or "page=5" in url for url in calls))
+        self.assertTrue(all(p["baselineDiscovery"] for p in items if p["id"] in {"test:5", "test:6"}))
+        merged = c.merge_products([], items, "now")
+        self.assertIsNone(next(p for p in merged if p["id"] == "test:5")["change"])
+        self.assertEqual(next(p for p in merged if p["id"] == "test:5")["firstSeenAt"], "now")
+        self.assertEqual(next(p for p in merged if p["id"] == "test:1")["change"]["type"], "new")
+
+    def test_backfill_end_wraps_but_page_cap_is_not_exhaustion(self):
+        for short, maximum in [(True, 100), (False, 2)]:
+            with self.subTest(short=short):
+                def get(url):
+                    if url.endswith("/meta.json"):
+                        return {"currency": "USD"}
+                    ids = ([3] if short else [3, 4]) if "page=2" in url else [1, 2]
+                    return {"products": [feed_item("shopify", i) for i in ids]}
+                with patch.object(c.Fetcher, "json", side_effect=get):
+                    _, _, _, report = c.fetch_source(source(catalogueBackfill={"pagesPerRun": 4, "maxPage": maximum}), [])
+                self.assertEqual(report["nextBackfillPage"], 2)
+                self.assertEqual(report["backfillReachedEnd"], short)
+                self.assertEqual(report["backfillReachedLimit"], not short)
+
+    def test_only_explicit_wordpress_invalid_page_error_is_exhaustion(self):
+        for code in ["rest_post_invalid_page_number", "rest_invalid_param"]:
+            with self.subTest(code=code):
+                def get(url):
+                    if dict(c.urllib.parse.parse_qsl(c.urllib.parse.urlsplit(url).query)).get("page") == "2":
+                        raise c.urllib.error.HTTPError(url, 400, "Bad Request", {}, io.BytesIO(json.dumps({"code": code}).encode()))
+                    return [feed_item("wordpress", 1), feed_item("wordpress", 2)]
+                with patch.object(c.Fetcher, "json", side_effect=get):
+                    _, _, _, report = c.fetch_source(source("wordpress", catalogueBackfill={"pagesPerRun": 2}), [])
+                self.assertEqual(report["backfillReachedEnd"], code == "rest_post_invalid_page_number")
+                self.assertEqual(bool(report["paginationErrors"]), code != "rest_post_invalid_page_number")
+                self.assertEqual(report["nextBackfillPage"], 2)
+
+    def test_supplemental_failure_keeps_primary_and_cursor_on_source_failure(self):
+        config = source(discoveryFeeds=[{"id": "colour", "endpoint": "https://example.org/collections/colour/products.json"}], catalogueBackfill={"pagesPerRun": 2})
+        old = {"products": [], "sources": [{"id": "test", "lastSuccess": "before", "nextBackfillPage": 12}]}
+        def get(url):
+            if "collections" in url:
+                raise TimeoutError("collection unavailable")
+            if url.endswith("/meta.json"):
+                return {"currency": "USD"}
+            return {"products": [feed_item("shopify", 1)]}
+        with patch.object(c.Fetcher, "json", side_effect=get):
+            result = c.collect([config], old, "now")
+        self.assertEqual(result["sources"][0]["status"], "partial")
+        self.assertEqual(result["products"][0]["id"], "test:1")
+        with patch.object(c, "fetch_source", side_effect=TimeoutError("source unavailable")):
+            result = c.collect([config], old, "later")
+        self.assertEqual(result["sources"][0]["nextBackfillPage"], 12)
+        self.assertIsNone(result["sources"][0]["latestWindowCapped"])
+
+    def test_supplemental_observation_preserves_existing_discovery_and_events(self):
+        first = c.merge_products([], [product()], "before")[0]
+        first["discoveryReason"] = "latest_window"
+        first["baselineDiscovery"] = False
+        result = c.merge_products([first], [{**product(), "baselineDiscovery": True, "discoveryReason": "catalogue_backfill"}], "later")[0]
+        self.assertEqual(result["firstSeenAt"], "before")
+        self.assertEqual(result["change"], first["change"])
+        self.assertEqual(result["history"], first["history"])
+        self.assertEqual(result["discoveryReason"], "latest_window")
+        self.assertFalse(result["baselineDiscovery"])
+
+    def test_short_titles_use_full_product_metadata_without_generic_footer_matches(self):
+        item = feed_item("shopify", 1)
+        item.update({"title": "KITSUNE", "product_type": "", "body_html": "A legendary fox. " * 30 + "This 2 oz silver coin has a colorized finish."})
+        current = c.normalize(source(), item)
+        self.assertIsNotNone(current)
+        self.assertEqual(current["metal"], "Silver")
+        self.assertTrue(current["isColorized"])
+        self.assertEqual(current["category"], "Coin")
+        self.assertNotIn("colorized", current["description"])
+        item.update({"body_html": "A legendary fox.", "tags": ["unrelated"] * 32 + ["Silver Coins", "Colorized"]})
+        current = c.normalize(source(), item)
+        self.assertEqual(current["metal"], "Silver")
+        self.assertTrue(current["isColorized"])
+        self.assertFalse(c.is_relevant("Greeting Card", "Stationery", "We sell silver coins, gold coins and collectibles. Subscribe today.", []))
+        self.assertFalse(c.is_relevant("Coin Capsules", "", "2 oz silver coin with colorized finish", ["Silver"]))
+        item.update({"title": "Silver-plated Brass Coin", "tags": ["Silver Coins", "Colorized"]})
+        self.assertEqual(c.normalize(source(), item)["metal"], "Other")
+
     def test_directory_never_fetches_or_changes_prior_observations(self):
         first = c.merge_products([], [product()], "a", baseline=True)
         config = source("directory", kind="Colorizer", region="Europe", evidenceUrl="https://example.org/about", trackingReason="No supported public feed")
@@ -209,6 +342,29 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(current["products"][0]["lastCheckedAt"], "a")
         self.assertEqual(len(prior["products"]), 2)
 
+    def test_retained_title_form_correction_preserves_observation_history_and_color_evidence(self):
+        prior_product = c.merge_products([], [{**product(), "title": "Spectrum Parrot 1 oz Silver Colorized Proof Coin",
+                                               "category": "Bar", "metal": "Silver", "isColorized": True,
+                                               "isColorizedSilverCoin": False, "colorizedEvidence": "Title: Colorized"}], "before")[0]
+        prior = {"products": [prior_product], "sources": [{"id": "test", "lastSuccess": "before"}]}
+        with patch.object(c, "fetch_source", side_effect=TimeoutError("offline")):
+            result = c.collect([source()], prior, "later")
+        corrected = result["products"][0]
+        self.assertEqual(corrected["category"], "Coin")
+        self.assertTrue(corrected["isColorizedSilverCoin"])
+        for key in ["firstSeenAt", "lastSeenAt", "lastCheckedAt", "publishedAt", "history", "change", "colorizedEvidence"]:
+            self.assertEqual(corrected[key], prior_product[key])
+        self.assertEqual(prior_product["category"], "Bar")
+        self.assertFalse(prior_product["isColorizedSilverCoin"])
+
+    def test_retained_generic_title_does_not_infer_form_from_truncated_description(self):
+        prior_product = c.merge_products([], [{**product(), "title": "KITSUNE", "category": "Collectible",
+                                               "metal": "Silver", "description": "A silver coin appears here.",
+                                               "isColorized": True, "isColorizedSilverCoin": False}], "before")[0]
+        with patch.object(c, "fetch_source", side_effect=TimeoutError("offline")):
+            result = c.collect([source()], {"products": [prior_product]}, "later")
+        self.assertEqual(result["products"][0], prior_product)
+
     def test_blind_box_rarity_is_not_whole_edition_mintage(self):
         data = c.details("Scooby-Doo Blind Box", "Collectible Coins", "Rare gold chase with a mintage of just 30 pieces per applicable tier; mintages ranging from 1,800 to 30 pieces", [])
         self.assertIsNone(data["mintage"])
@@ -240,6 +396,20 @@ class CollectorTests(unittest.TestCase):
     def test_title_metal_and_category_take_priority(self):
         self.assertEqual(c.details("20g Gold Bar", "Bullion", "Silver coins also available", [])["metal"], "Gold")
         self.assertEqual(c.details("3oz Silver Leopard", "Barre de Luxe", "", [])["category"], "Bar")
+
+    def test_explicit_coin_and_round_titles_outrank_mixed_shop_categories(self):
+        taxonomy = "1 oz Silver Rounds and Bars Silver (Rounds and Bars) Colorized Coins"
+        for title in ["2026 Cook Islands Spectrum Parrot 1 oz Silver Colorized Proof Coin",
+                      "Rainbow Toucan 1 oz Silver Colorized Round",
+                      "Christmas 1 oz Silver Colorized Round"]:
+            with self.subTest(title=title):
+                item = feed_item("woocommerce", 982389)
+                item.update({"name": title, "categories": [{"name": taxonomy}]})
+                normalized = c.normalize(source("woocommerce"), item)
+                self.assertEqual(normalized["category"], "Coin")
+                self.assertTrue(normalized["isColorizedSilverCoin"])
+        self.assertEqual(c.detect_category("Colorized Silver Coin-in-Bar", "Silver Coins"), "Bar")
+        self.assertEqual(c.detect_category("Silver Coin Sculpture", "Silver Coins"), "Collectible")
 
     def test_set_weight_and_fractional_weight(self):
         self.assertEqual(c.details("Thor Set 2 x 1 Oz Silver Coin", "", "", [])["weight"], "2 × 1 oz")

@@ -22,7 +22,21 @@ The source directory covers sovereign mints, private makers, aftermarket coloriz
 
 Coverage is a bounded selection of supported feeds, not the entire market. Each automatic source reports its coverage, pagination limit, and collection health. Multiple dealers can list the same release; they remain separate source listings so stock and prices keep their provenance. Products that disappear from a bounded feed are not automatically labelled sold out. The last successful observation remains visible and can become stale. A reported brand comes from the source's vendor or manufacturer field; a retailer's vendor label is not independent verification of who physically made the coin.
 
-The initial collection is a baseline. Later observations can establish price and availability changes, including restocks and sellouts. A sellout signal means the listing changed status between observations; it does not measure units sold, collector demand, or the precise moment the stock changed. The first run cannot reconstruct earlier sales or price history.
+Initial source imports, newly added focused collections, and discoveries from rotating older catalogue pages are baselines. They do not create misleading new-release alerts for historical stock. Later observations can establish price and availability changes, including restocks and sellouts. A sellout signal means the listing changed status between observations; it does not measure units sold, collector demand, or the precise moment the stock changed. The first run cannot reconstruct earlier sales or price history.
+
+## Colorized silver focus and retrieval
+
+The default view is **Colorized silver coins**. **All colorized silver** also includes bars and other physical collectibles; **All releases** includes every retained listing. Material, product form, and color finish are separate checks. Silver-plated copper and gilding alone do not qualify as colorized silver coins. Unknown finishes remain discoverable in All releases.
+
+Classification reads the full product description, all available tags, and structured finish attributes before shortening text for display. Positive finish evidence is shown in the details and exported to CSV. Packaging colors and generic “art coin” wording are not sufficient. This is text-based classification: it does not infer a finish from images, and sources with incomplete metadata can still have missed matches.
+
+Retrieval has three layers:
+
+1. Refresh each supported source's latest catalogue window on every run.
+2. Also read seven verified collections/categories for Chromatics, Parthava coloured coins, GR Reserve colorized coins, Coin Shoppe colorized silver, PiK ennobled coins, NumisCollect PopCoins, and Art in Coins color-finish tags. Category membership aids discovery; each listing still requires its own material and finish evidence.
+3. Rotate through four additional catalogue pages per run at those seven sources and My Collectables, starting beyond the fresh window. Successful pages advance a persistent cursor; failed pages are retried. Scans restart on a confirmed end or the configured page-100 cap. Reaching the cap is not proof of complete coverage.
+
+Listings from overlapping feeds merge using the seller's original product ID, preserving first-seen dates and history. Different sellers' offers remain separate. Sources & coverage exposes capped windows, focused-feed results, and deeper-scan progress, making incomplete retrieval visible. Directory-only sources still have no automatic product monitoring.
 
 Watchlist selections are stored in the browser on this device. They do not sync between browsers and do not send email or push notifications.
 
@@ -75,7 +89,7 @@ GitHub may delay scheduled work, and inactive public repositories can have sched
 
 Add only public, permitted endpoints to `sources.json`, using an adapter supported by `scripts/collect.py`. Test extraction against real products and ambiguous stock states before enabling a new source. Do not treat promotional copy as a live inventory count. Preserve first-seen timestamps and source identity when changing adapters.
 
-Automatic adapters support Shopify product feeds, WooCommerce Store API products, and WordPress product posts. `maxPages` sets a bounded window of up to four pages; each source's coverage text explains the scope. Request pacing respects published crawl delays. Blocked endpoints are not bypassed. A failed source keeps its previous observations and their actual last-check times.
+Automatic adapters support Shopify product feeds, WooCommerce Store API products, and WordPress product posts. `maxPages` sets the latest window of up to four pages. Optional `discoveryFeeds` entries use the same adapter and specify `id`, `label`, `endpoint`, and `maxPages` (up to four each). Optional `catalogueBackfill: {"pagesPerRun": 4, "maxPage": 100}` adds bounded rotating deeper scans. Each source's coverage text explains the scope. Request pacing respects published crawl delays. Blocked endpoints are not bypassed. A failed source keeps its previous observations and their actual last-check times.
 
 Use `type: "directory"` with `trackingReason` for verified official sources without a supported feed. Include `kind`, `region`, and `evidenceUrl` for the searchable directory. The collector makes no requests to directory-only sources. Feed availability can change, so a supported adapter is not a promise of perpetual access.
 

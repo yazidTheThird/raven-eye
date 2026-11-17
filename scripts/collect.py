@@ -25,6 +25,10 @@ import urllib.parse
 import urllib.request
 import urllib.robotparser
 
+# Support both direct CLI execution and importlib-based collector tests.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from classify import classify_product
+
 ROOT = Path(__file__).resolve().parents[1]
 USER_AGENT = "RavenEye/1.0 (+https://github.com/yazidTheThird/raven-eye; public-release-monitor)"
 TIMEOUT = 25
@@ -118,15 +122,19 @@ def detect_metal(title, detail=""):
     return "Other"
 
 
-def detect_category(title, product_type=""):
-    s = (title + " " + product_type).lower()
-    if re.search(r"\b(bar|bars|barre|ingot|ingots|barren|anlagebarren|lingote)\b", s):
-        return "Bar"
-    if re.search(r"\b(foil|blind box|sculpture|statue|figurine|coin.?card|medallion|note|pendant)\b", s):
-        return "Collectible"
-    if re.search(r"\b(coin|coins|round|rounds|moeda|moedas|münze|münzen|silbermünze|silbermünzen|goldmünze|goldmünzen|anlagemünze)\b", s):
-        return "Coin"
-    return "Collectible"
+def detect_category(title, product_type="", default="Collectible"):
+    # Sellers group unrelated forms in taxonomy labels such as "Silver Rounds
+    # and Bars". An explicit title describes this release more precisely.
+    # Within the same title, bars and sculptures retain priority over "coin"
+    # (for example a coin-in-bar or a sculpture made from a coin).
+    for s in [title.lower(), product_type.lower()]:
+        if re.search(r"\b(bar|bars|barre|ingot|ingots|barren|anlagebarren|lingote)\b", s):
+            return "Bar"
+        if re.search(r"\b(foil|blind box|sculpture|statue|figurine|coin.?card|medallion|note|pendant)\b", s):
+            return "Collectible"
+        if re.search(r"\b(coin|coins|round|rounds|moeda|moedas|münze|münzen|silbermünze|silbermünzen|goldmünze|goldmünzen|anlagemünze)\b", s):
+            return "Coin"
+    return default
 
 
 def details(title, product_type, description, tags):
@@ -183,13 +191,25 @@ def is_relevant(title, product_type, description, tags):
     primary = (title + " " + product_type).lower()
     if excluded_title(title) or re.fullmatch(r"(?:calendar|book|catalogue|catalog|magazine)s?", product_type.strip(), re.I):
         return False
-    return bool(re.search(r"\b(coin|coins|silver|gold|platinum|palladium|copper|bullion|bar|bars|round|rounds|foil|medal|medallion|sculpture|statue|blind box|silber|silbermünze|silbermünzen|goldmünze|goldmünzen|barren|anlagebarren|prata|ouro|moeda|moedas)\b", primary))
+    release_terms = r"\b(coin|coins|silver|gold|platinum|palladium|copper|bullion|bar|bars|round|rounds|foil|medal|medallion|sculpture|statue|blind box|silber|silbermünze|silbermünzen|goldmünze|goldmünzen|barren|anlagebarren|prata|ouro|moeda|moedas)\b"
+    if re.search(release_terms, primary) or any(re.search(release_terms, tag, re.I) for tag in tags):
+        return True
+    # Short artistic titles often put the actual product type only in the body.
+    # Require physical material specifications alongside the object, rather
+    # than accepting a generic footer saying the shop sells silver and gold.
+    body = description.lower()
+    metal = r"(?:silver|gold|platinum|palladium|copper|silber|prata|ouro)"
+    physical = r"(?:coin|round|bar|medal|medallion|foil|sculpture|statue|moeda|münze)"
+    quantity = r"\d+(?:[.,/]\d+)?\s*(?:troy\s*)?(?:oz|ounces?|kg|grams?|gr|gm|g)\b"
+    purity = r"(?:\.?999\d*|925|999/1000|99[.,]9\d*\s*%)"
+    return bool(re.search(r"(?:" + quantity + "|" + purity + r").{0,70}\b" + metal + r"\b.{0,45}\b" + physical + r"s?\b", body)
+                or re.search(r"\b" + metal + r"\b.{0,45}\b" + physical + r"s?\b.{0,70}(?:" + quantity + "|" + purity + ")", body))
 
 
-def clean_tags(values):
+def clean_tags(values, limit=30):
     if isinstance(values, str):
         values = values.split(",")
-    return list(dict.fromkeys(text(v.get("name", "") if isinstance(v, dict) else v) for v in (values or [])))[:30]
+    return list(dict.fromkeys(text(v.get("name", "") if isinstance(v, dict) else v) for v in (values or [])))[:limit]
 
 
 def status_from_labels(labels):
@@ -269,7 +289,7 @@ def normalize(source, item):
         title = text(item.get("title"))
         description = text(item.get("body_html"))
         product_type = text(item.get("product_type"))
-        tags = clean_tags(item.get("tags"))
+        tags = clean_tags(item.get("tags"), limit=None)
         # Only explicitly labelled material tags affect material classification.
         product_type += " " + " ".join(tag for tag in tags if re.match(r"^METAL\s", tag, re.I))
         variants = item.get("variants") or []
@@ -302,7 +322,7 @@ def normalize(source, item):
         title = text(item.get("name"))
         short_description = text(item.get("short_description"))
         description = " ".join(dict.fromkeys(v for v in [short_description, text(item.get("description"))] if v))
-        tags = clean_tags(item.get("tags"))
+        tags = clean_tags(item.get("tags"), limit=None)
         product_type = " ".join(clean_tags(item.get("categories"))) + " " + short_description
         for attribute in item.get("attributes") or []:
             label = text(attribute.get("name")).lower()
@@ -401,12 +421,24 @@ def normalize(source, item):
         price = None
     if currency and not re.fullmatch(r"[A-Z]{3}", currency):
         currency = None
+    specifications = {**details(title, product_type, description, tags), **specification_values}
+    if specifications["metal"] == "Other" and not re.search(r"\b(?:silver|gold|platinum|palladium|copper|brass|silber|prata|ouro)\b", title + " " + product_type + " " + description, re.I):
+        material_tags = [tag for tag in tags if re.fullmatch(r"(?:metal\s*[:\-]?\s*)?(?:silver|gold|platinum|palladium|copper|silber|prata|ouro)(?:\s+(?:coins?|rounds?|bars?|bullion))?", tag, re.I)]
+        material_values = {detect_metal(tag) for tag in material_tags} - {"Other"}
+        if len(material_values) == 1:
+            specifications["metal"] = material_values.pop()
+            specification_evidence["metal"] = "Source-reported product tag: " + ", ".join(material_tags)
+    classification = classify_product(title, product_type, description, tags,
+                                      attributes=item.get("attributes"),
+                                      metal=specifications["metal"], category=specifications["category"])
+    if specifications["category"] == "Collectible" and classification.get("isColorizedSilverCoin"):
+        specifications["category"] = "Coin"
     return {
         "id": source["id"] + ":" + str(item["id"]),
         "sourceProductId": str(item["id"]),
         "sourceId": source["id"], "sourceName": source["name"],
         "title": title, "url": url, "image": image,
-        **details(title, product_type, description, tags), **specification_values,
+        **specifications, **classification,
         "specificationEvidence": specification_evidence,
         "price": price, "currency": currency, "status": status,
         "publishedAt": published, "description": description[:277] + ("…" if len(description) > 277 else ""),
@@ -485,9 +517,9 @@ def bounded_pages(source):
 
 
 def page_url(url, page):
-    if page == 1:
-        return url
     parts = urllib.parse.urlsplit(url)
+    if page == 1 and "page" not in dict(urllib.parse.parse_qsl(parts.query)):
+        return url
     query = [(key, value) for key, value in urllib.parse.parse_qsl(parts.query, keep_blank_values=True) if key != "page"]
     query.append(("page", str(page)))
     return urllib.parse.urlunsplit(parts._replace(query=urllib.parse.urlencode(query)))
@@ -503,7 +535,71 @@ def page_size(source):
         return default
 
 
-def fetch_source(source, old_products):
+def invalid_page_error(exc, kind):
+    """Only a structured WordPress invalid-page response proves exhaustion."""
+    if kind not in {"wordpress", "woocommerce"} or not isinstance(exc, urllib.error.HTTPError) or exc.code != 400:
+        return False
+    try:
+        payload = json.loads(exc.read(4096).decode("utf-8"))
+        return isinstance(payload, dict) and payload.get("code") == "rest_post_invalid_page_number"
+    except (OSError, ValueError, UnicodeError, AttributeError):
+        return False
+
+
+def fetch_window(fetcher, source, start_page, count, require_first=False, seen_before=None):
+    """Read a bounded window; failed pages are never skipped by the cursor."""
+    items_by_id = {}
+    prior_ids = set(seen_before or [])
+    report = {"pagesFetched": 0, "paginationErrors": [], "windowCapped": False,
+              "exhausted": False, "nextPage": start_page}
+    for page in range(start_page, start_page + count):
+        try:
+            payload = fetcher.json(page_url(source["endpoint"], page))
+            items = payload.get("products") if isinstance(payload, dict) and source["type"] == "shopify" else payload
+            if not isinstance(items, list) or (require_first and page == 1 and not items):
+                raise ValueError("Feed returned no product list; previous observations preserved")
+            if any(not isinstance(item, dict) or item.get("id") is None for item in items):
+                raise ValueError("Feed contained a product without a stable ID")
+        except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
+            if page > 1 and invalid_page_error(exc, source["type"]):
+                report["exhausted"] = True
+                break
+            if require_first and page == 1:
+                raise
+            report["paginationErrors"].append("Page " + str(page) + ": " + str(exc)[:160])
+            break
+        report["pagesFetched"] += 1
+        new_ids = {str(item["id"]) for item in items} - items_by_id.keys() - prior_ids
+        # Detect ignored page arguments without calling a repeated page a full
+        # catalogue traversal. Partial overlap remains valid during live edits.
+        if items and not new_ids:
+            report["paginationErrors"].append("Page " + str(page) + ": the feed repeated an earlier page; pagination stopped without duplicate listings.")
+            break
+        for item in items:
+            items_by_id.setdefault(str(item["id"]), item)
+        report["nextPage"] = page + 1
+        if len(items) < page_size(source):
+            report["exhausted"] = True
+            break
+    report["windowCapped"] = not report["exhausted"] and not report["paginationErrors"] and report["pagesFetched"] == count
+    report["fetchedCount"] = len(items_by_id)
+    return items_by_id, report
+
+
+def backfill_limits(source):
+    config = source.get("catalogueBackfill")
+    if not isinstance(config, dict):
+        return None
+    start = bounded_pages(source) + 1
+    try:
+        pages = max(1, min(MAX_PAGES, int(config.get("pagesPerRun", 2))))
+        maximum = max(start, min(100, int(config.get("maxPage", 100))))
+    except (TypeError, ValueError):
+        return None
+    return start, pages, maximum
+
+
+def fetch_source(source, old_products, previous_health=None):
     # A directory is a useful, explicit coverage gap, never a pretend live feed.
     if source["type"] == "directory":
         return [], 0, [], {"pagesFetched": 0, "paginationErrors": [], "skippedRechecks": 0}
@@ -511,32 +607,66 @@ def fetch_source(source, old_products):
         raise ValueError("Unsupported public feed type")
     fetcher = Fetcher()
     source = copy.deepcopy(source)
-    items_by_id = {}
-    pages_fetched = 0
-    pagination_errors = []
-    for page in range(1, bounded_pages(source) + 1):
+    previous_health = previous_health or {}
+    items_by_id, latest = fetch_window(fetcher, source, 1, bounded_pages(source), require_first=True)
+    origins = {item_id: {"discoveryReason": "latest_window", "baselineDiscovery": False} for item_id in items_by_id}
+    report = {"pagesFetched": latest["pagesFetched"], "paginationErrors": list(latest["paginationErrors"]),
+              "latestWindowCapped": latest["windowCapped"], "latestFetchedCount": len(items_by_id),
+              "discoveryFeeds": [], "backfillPagesFetched": 0}
+    old_feeds = {feed["id"]: feed for feed in previous_health.get("discoveryFeeds", [])}
+    for index, feed in enumerate(source.get("discoveryFeeds") or []):
+        if not isinstance(feed, dict) or not safe_url(feed.get("endpoint")):
+            report["paginationErrors"].append("Discovery feed " + str(index + 1) + ": invalid public endpoint")
+            continue
+        feed_id = str(feed.get("id") or index + 1)
+        previous_feed = old_feeds.get(feed_id, {})
+        # Changing a feed endpoint is a new baseline even if its label is reused.
+        feed_source = {**source, "endpoint": feed["endpoint"], "maxPages": feed.get("maxPages", 1)}
+        baseline = (not previous_feed.get("baselineComplete") or previous_feed.get("endpoint") != feed["endpoint"]
+                    or bounded_pages(feed_source) > previous_feed.get("maxPages", 0))
+        extra, feed_report = fetch_window(fetcher, feed_source, 1, bounded_pages(feed_source))
+        feed_report.update({"id": feed_id, "label": feed.get("label", feed_id), "endpoint": feed["endpoint"],
+                            "maxPages": bounded_pages(feed_source),
+                            "status": "partial" if feed_report["paginationErrors"] and feed_report["pagesFetched"] else "error" if feed_report["paginationErrors"] else "ok",
+                            "lastSuccess": previous_feed.get("lastSuccess") if previous_feed.get("endpoint") == feed["endpoint"] else None,
+                            "baselineComplete": not baseline or not feed_report["paginationErrors"]})
+        report["discoveryFeeds"].append(feed_report)
+        report["paginationErrors"].extend("Discovery " + feed_id + " " + error for error in feed_report["paginationErrors"])
+        for item_id, item in extra.items():
+            if item_id not in items_by_id:
+                items_by_id[item_id] = item
+                origins[item_id] = {"discoveryReason": "discovery_feed", "discoveryFeedId": feed_id, "baselineDiscovery": baseline}
+    limits = backfill_limits(source)
+    if limits:
+        start, budget, maximum = limits
         try:
-            payload = fetcher.json(page_url(source["endpoint"], page))
-            items = payload.get("products") if isinstance(payload, dict) and source["type"] == "shopify" else payload
-            if not isinstance(items, list) or (page == 1 and not items):
-                raise ValueError("Feed returned no product list; previous observations preserved")
-            if any(not isinstance(item, dict) or item.get("id") is None for item in items):
-                raise ValueError("Feed contained a product without a stable ID")
-        except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
-            if page == 1:
-                raise
-            pagination_errors.append("Page " + str(page) + ": " + str(exc)[:160])
-            break
-        pages_fetched += 1
-        new_ids = {str(item["id"]) for item in items} - items_by_id.keys()
-        # Retain the first observation if moving catalogue windows overlap.
-        for item in items:
-            items_by_id.setdefault(str(item["id"]), item)
-        if not items or len(items) < page_size(source):
-            break
-        if page > 1 and not new_ids:
-            pagination_errors.append("The feed repeated an earlier page; pagination stopped without duplicate listings.")
-            break
+            cursor = max(start, min(maximum, int(previous_health.get("nextBackfillPage", start))))
+        except (ValueError, TypeError):
+            cursor = start
+        # A short current window already proves there are no deeper pages.
+        if latest["exhausted"]:
+            backfill = {"pagesFetched": 0, "paginationErrors": [], "exhausted": True,
+                        "nextPage": start, "fetchedCount": 0, "windowCapped": False}
+            extra = {}
+        elif latest["paginationErrors"]:
+            backfill = {"pagesFetched": 0, "paginationErrors": [], "exhausted": False,
+                        "nextPage": cursor, "fetchedCount": 0, "windowCapped": False}
+            extra = {}
+        else:
+            # Compare only against the primary window: collections can overlap
+            # valid catalogue pages without indicating ignored pagination.
+            primary_ids = {key for key, value in origins.items() if value["discoveryReason"] == "latest_window"}
+            extra, backfill = fetch_window(fetcher, source, cursor, min(budget, maximum - cursor + 1), seen_before=primary_ids)
+        reached_limit = backfill["nextPage"] > maximum
+        report.update({"backfillStartPage": cursor, "backfillPagesFetched": backfill["pagesFetched"],
+                       "backfillFetchedCount": backfill["fetchedCount"], "backfillReachedEnd": backfill["exhausted"],
+                       "backfillReachedLimit": reached_limit, "backfillMaxPage": maximum,
+                       "nextBackfillPage": start if backfill["exhausted"] or reached_limit else backfill["nextPage"]})
+        report["paginationErrors"].extend("Backfill " + error for error in backfill["paginationErrors"])
+        for item_id, item in extra.items():
+            if item_id not in items_by_id:
+                items_by_id[item_id] = item
+                origins[item_id] = {"discoveryReason": "catalogue_backfill", "baselineDiscovery": True}
     items = list(items_by_id.values())
     if source["type"] == "woocommerce":
         # Store API dates are optional. Join the public WordPress dates by exact
@@ -563,8 +693,14 @@ def fetch_source(source, old_products):
                 source["currency"] = meta["currency"]
         except (OSError, ValueError, RuntimeError):
             pass
-    normalized = [normalize(source, item) for item in items]
-    normalized = [p for p in normalized if p]
+    normalized = []
+    for item in items:
+        current = normalize(source, item)
+        if current:
+            current.update(origins[str(item["id"])])
+            normalized.append(current)
+    report["acceptedCount"] = len(normalized)
+    report["rejectedCount"] = len(items) - len(normalized)
     if not normalized:
         raise ValueError("Feed parsed but contained no relevant releases; previous data preserved")
     seen = {p["id"] for p in normalized}
@@ -582,7 +718,8 @@ def fetch_source(source, old_products):
         except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
             # 404/unlisted is not evidence of a sale or zero stock.
             warnings.append(prior["id"] + ": " + type(exc).__name__)
-    return normalized, len(items), warnings, {"pagesFetched": pages_fetched, "paginationErrors": pagination_errors, "skippedRechecks": skipped_rechecks}
+    report["skippedRechecks"] = skipped_rechecks
+    return normalized, len(items), warnings, report
 
 
 def merge_products(previous, observations, at, baseline=False):
@@ -595,6 +732,14 @@ def merge_products(previous, observations, at, baseline=False):
         if old and not current.get("maker") and old.get("maker"):
             current["maker"] = old["maker"]
             current["makerEvidence"] = old.get("makerEvidence")
+        # Discovery describes the first import, not whichever feed refreshed
+        # this offer today. Preserve historical provenance and alert decisions.
+        if old:
+            for key in ["discoveryReason", "discoveryFeedId", "baselineDiscovery"]:
+                if key in old:
+                    current[key] = old[key]
+                else:
+                    current.pop(key, None)
         current.update({"firstSeenAt": old["firstSeenAt"] if old else at, "lastSeenAt": at, "lastCheckedAt": at})
         current["sourceDateInFuture"] = bool(current.get("publishedAt") and current["publishedAt"] > at)
         sample = {"at": at, "price": current["price"], "currency": current["currency"], "status": current["status"], "selectedVariantId": current.get("selectedVariantId"), "selectedVariant": current.get("selectedVariant")}
@@ -618,7 +763,7 @@ def merge_products(previous, observations, at, baseline=False):
                 current["change"] = {"type": event, "at": at, "previousPrice": old.get("price"), "previousStatus": old.get("status")}
         else:
             current["history"] = [sample]
-            current["change"] = None if baseline else {"type": "new", "at": at}
+            current["change"] = None if baseline or current.get("baselineDiscovery") else {"type": "new", "at": at}
         result[current["id"]] = current
     return list(result.values())
 
@@ -626,11 +771,21 @@ def merge_products(previous, observations, at, baseline=False):
 def collect(config, previous, at):
     # Remove only explicit accessory/merchandise mistakes from older imports.
     # Absence from a current feed never removes a legitimate historical release.
-    products = [p for p in previous.get("products", []) if not excluded_title(p.get("title", ""))]
+    products = [copy.deepcopy(p) for p in previous.get("products", []) if not excluded_title(p.get("title", ""))]
+    # Correct earlier mixed-taxonomy form mistakes even when those offers are
+    # outside today's windows. The title is retained verbatim; this is a local
+    # metadata correction, not a new observation or a stock/price check.
+    for product in products:
+        category = detect_category(product.get("title", ""), default=None)
+        if category and "category" in product:
+            product["category"] = category
+            if "isColorized" in product or "isColorizedSilverCoin" in product:
+                product["isColorizedSilverCoin"] = (category == "Coin" and product.get("metal") == "Silver"
+                                                      and product.get("isColorized") is True)
     old_sources = {s["id"]: s for s in previous.get("sources", [])}
     results = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
-        futures = {pool.submit(fetch_source, s, [p for p in products if p["sourceId"] == s["id"]]): s for s in config if s["type"] != "directory"}
+        futures = {pool.submit(fetch_source, s, [p for p in products if p["sourceId"] == s["id"]], old_sources.get(s["id"], {})): s for s in config if s["type"] != "directory"}
         for future in concurrent.futures.as_completed(futures):
             source = futures[future]
             try:
@@ -650,10 +805,22 @@ def collect(config, previous, at):
             continue
         result, error = results[source["id"]]
         health.update({"status": "error" if error else "ok", "lastAttempt": at, "error": error, "maxPages": bounded_pages(source), "windowLimit": bounded_pages(source) * page_size(source), "pagesFetched": 0})
+        # A failed fresh window must not reset the rotation or a collection's
+        # completed baseline. It also must not report stale coverage as fresh.
+        for key in ["nextBackfillPage", "lastBackfillCompletedAt", "discoveryFeeds"]:
+            if key in old:
+                health[key] = copy.deepcopy(old[key])
+        health["latestWindowCapped"] = None
         if result:
             observations, fetched, warnings, report = result
             products = merge_products(products, observations, at, baseline=not old.get("lastSuccess"))
             health.update({"firstSuccess": health["firstSuccess"] or at, "lastSuccess": at, "count": sum(p["sourceId"] == source["id"] for p in products), "observedCount": len(observations), "fetchedCount": fetched, "recheckErrors": len(warnings), **report})
+            for feed in health.get("discoveryFeeds", []):
+                feed["lastAttempt"] = at
+                if feed.get("status") == "ok":
+                    feed["lastSuccess"] = at
+            if report.get("backfillReachedEnd"):
+                health["lastBackfillCompletedAt"] = at
             notes = []
             if report["paginationErrors"]:
                 health["status"] = "partial"
@@ -663,12 +830,17 @@ def collect(config, previous, at):
                 notes.append("Some older listings could not be rechecked; their last known values and check dates are retained.")
             if report["skippedRechecks"]:
                 notes.append("Older Shopify listings outside the fetched window retain their previous stock-check dates; the individual metadata endpoint is not a stock check.")
+            if report.get("latestWindowCapped"):
+                notes.append("The current catalogue window filled its page budget; it does not establish complete coverage.")
+            if report.get("backfillReachedLimit"):
+                notes.append("The rotating scan reached its configured page cap and will restart; this is not proof that the full catalogue was covered.")
             if notes:
                 health["note"] = " ".join(notes)
+        health["colorizedSilverCoinCount"] = sum(p.get("isColorizedSilverCoin") is True for p in products if p["sourceId"] == source["id"])
         sources.append(health)
     products.sort(key=lambda p: (p.get("publishedAt") or p["firstSeenAt"], p["id"]), reverse=True)
     return {"schemaVersion": 1, "generatedAt": at, "sources": sources, "products": products,
-            "methodology": {"firstSeen": "First successful Raven Eye observation, not the original release date.", "publishedAt": "Seller publication timestamp when exposed; not a verified mint launch date.", "status": "Seller feed observation at lastCheckedAt; a source outage or absent listing never implies sold out.", "prices": "Original seller currency; taxes, shipping, quantity tiers and local storefront conversion may differ. No currency conversion.", "maker": "Reported brand/vendor or an explicit maker attribute from the seller's feed; not independent verification of the physical manufacturer.", "coverage": "Automatic sources use bounded catalogue windows (at most four pages). Older WooCommerce and WordPress listings are rechecked in rotation. Older Shopify listings retain their previous stock checks until they reappear in the window. Directory entries have no automatic product monitoring. Missing listings retain historical observations; this is not an exhaustive catalogue of every maker or release.", "baseline": "Initial imports do not create new-release alerts. New means first detected after that source's baseline."}}
+            "methodology": {"firstSeen": "First successful Raven Eye observation, not the original release date.", "publishedAt": "Seller publication timestamp when exposed; not a verified mint launch date.", "status": "Seller feed observation at lastCheckedAt; a source outage or absent listing never implies sold out.", "prices": "Original seller currency; taxes, shipping, quantity tiers and local storefront conversion may differ. No currency conversion.", "maker": "Reported brand/vendor or an explicit maker attribute from the seller's feed; not independent verification of the physical manufacturer.", "coverage": "Automatic sources refresh bounded primary catalogue windows (at most four pages). Selected sources also scan focused collections and rotating deeper pages, each with a separate fixed budget. A capped window or scan is not complete catalogue coverage. Older WooCommerce and WordPress listings are rechecked in rotation; Shopify stock checks advance only when a listing reappears in a public collection or catalogue feed. Directory entries have no automatic product monitoring. Missing listings retain historical observations; this is not an exhaustive catalogue of every maker or release.", "baseline": "Initial source and focused-collection imports, plus discoveries only in rotating older catalogue pages, do not create new-release alerts. New means first detected outside those baseline imports; it does not verify a mint release date."}}
 
 
 def main():

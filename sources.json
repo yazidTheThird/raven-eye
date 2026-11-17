@@ -6,12 +6,25 @@
     "type": "woocommerce",
     "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc",
     "limit": 100,
-    "coverage": "Latest published source listings; older tracked items are rechecked in rotation. Missing prices remain unknown. Bounded to 4 pages / 400 feed entries per run.",
+    "coverage": "Latest published source listings; older tracked items are rechecked in rotation. Missing prices remain unknown. Bounded to 4 pages / 400 feed entries per run. Also scans a dedicated Colorized silver feed and 4 deeper catalogue pages per run in rotation, up to page 100. Limits and incomplete scans are reported; this is not complete catalogue coverage.",
     "kind": "Dealer",
     "region": "Canada",
     "evidenceUrl": "https://thecoinshoppe.ca",
     "maxPages": 4,
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-13",
+    "discoveryFeeds": [
+      {
+        "id": "silver-colorized",
+        "label": "Colorized silver",
+        "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=194&search=colorized",
+        "maxPages": 4,
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/silver-coins/"
+      }
+    ],
+    "catalogueBackfill": {
+      "pagesPerRun": 4,
+      "maxPage": 100
+    }
   },
   {
     "id": "numiscollect",
@@ -20,12 +33,25 @@
     "type": "woocommerce",
     "endpoint": "https://shop.numiscollect.eu/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc",
     "limit": 100,
-    "coverage": "Latest published source listings; older tracked items are rechecked in rotation. Missing prices remain unknown. Bounded to 4 pages / 400 feed entries per run.",
+    "coverage": "Latest published source listings; older tracked items are rechecked in rotation. Missing prices remain unknown. Bounded to 4 pages / 400 feed entries per run. Also scans a dedicated PopCoins silver art feed and 4 deeper catalogue pages per run in rotation, up to page 100. Limits and incomplete scans are reported; this is not complete catalogue coverage.",
     "kind": "Private mint",
     "region": "Netherlands",
     "evidenceUrl": "https://shop.numiscollect.eu",
     "maxPages": 4,
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-13",
+    "discoveryFeeds": [
+      {
+        "id": "popcoins",
+        "label": "PopCoins silver art",
+        "endpoint": "https://shop.numiscollect.eu/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=3863",
+        "maxPages": 3,
+        "evidenceUrl": "https://shop.numiscollect.eu/products/numiscollect-exclusive/popcoins-your-key-to-silver/"
+      }
+    ],
+    "catalogueBackfill": {
+      "pagesPerRun": 4,
+      "maxPage": 100
+    }
   },
   {
     "id": "parthava",
@@ -35,12 +61,25 @@
     "endpoint": "https://www.parthavacoin.com/products.json?limit=250",
     "currency": "USD",
     "limit": 250,
-    "coverage": "Public storefront listings; variant availability is source-reported. Older listings outside the fetched window keep their actual last-check dates. Bounded to 4 pages / 1000 feed entries per run.",
+    "coverage": "Public storefront listings; variant availability is source-reported. Older listings outside the fetched window keep their actual last-check dates. Bounded to 4 pages / 1000 feed entries per run. Also scans a dedicated Coloured coins feed and 4 deeper catalogue pages per run in rotation, up to page 100. Limits and incomplete scans are reported; this is not complete catalogue coverage.",
     "kind": "Dealer",
     "region": "United States",
     "evidenceUrl": "https://www.parthavacoin.com",
     "maxPages": 4,
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-13",
+    "discoveryFeeds": [
+      {
+        "id": "coloured",
+        "label": "Coloured coins",
+        "endpoint": "https://www.parthavacoin.com/collections/coloured/products.json?limit=250",
+        "maxPages": 2,
+        "evidenceUrl": "https://www.parthavacoin.com/collections/coloured"
+      }
+    ],
+    "catalogueBackfill": {
+      "pagesPerRun": 4,
+      "maxPage": 100
+    }
   },
   {
     "id": "agoro",
@@ -80,12 +119,25 @@
     "type": "wordpress",
     "endpoint": "https://www.artincoins.com/wp-json/wp/v2/product?per_page=100&orderby=date&order=desc",
     "limit": 100,
-    "coverage": "Latest published source listings; older tracked items are rechecked in rotation. Missing prices remain unknown. Bounded to 2 pages / 200 feed entries per run.",
+    "coverage": "Latest published source listings; older tracked items are rechecked in rotation. Missing prices remain unknown. Bounded to 2 pages / 200 feed entries per run. Also scans a dedicated Color, UV, enamel and metallic finishes feed and 4 deeper catalogue pages per run in rotation, up to page 100. Limits and incomplete scans are reported; this is not complete catalogue coverage.",
     "kind": "Dealer",
     "region": "United States",
     "evidenceUrl": "https://www.artincoins.com",
     "maxPages": 2,
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-13",
+    "discoveryFeeds": [
+      {
+        "id": "color-finishes",
+        "label": "Color, UV, enamel and metallic finishes",
+        "endpoint": "https://www.artincoins.com/wp-json/wp/v2/product?per_page=100&orderby=date&order=desc&product_tag=70,177,630,459,3933,3476",
+        "maxPages": 4,
+        "evidenceUrl": "https://www.artincoins.com/wp-json/wp/v2/product_tag?per_page=100&search=color"
+      }
+    ],
+    "catalogueBackfill": {
+      "pagesPerRun": 4,
+      "maxPage": 100
+    }
   },
   {
     "id": "north-view-products",
@@ -533,12 +585,25 @@
     "limit": 100,
     "kind": "Colorizer",
     "region": "Poland",
-    "coverage": "Latest 200 own editions, ennobled coins and selected international maker offers. Bounded to 2 pages / 200 feed entries per run.",
+    "coverage": "Latest 200 own editions, ennobled coins and selected international maker offers. Bounded to 2 pages / 200 feed entries per run. Also scans a dedicated Ennobled coins feed and 4 deeper catalogue pages per run in rotation, up to page 100. Limits and incomplete scans are reported; this is not complete catalogue coverage.",
     "evidenceUrl": "https://pik-coins.com/about-us/",
     "endpoint": "https://pik-coins.com/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc",
     "currency": "USD",
     "verifiedAt": "2026-11-13",
-    "maxPages": 2
+    "maxPages": 2,
+    "discoveryFeeds": [
+      {
+        "id": "ennobled",
+        "label": "Ennobled coins",
+        "endpoint": "https://pik-coins.com/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=111",
+        "maxPages": 4,
+        "evidenceUrl": "https://pik-coins.com/ennobled-coins-cat/"
+      }
+    ],
+    "catalogueBackfill": {
+      "pagesPerRun": 4,
+      "maxPage": 100
+    }
   },
   {
     "id": "top-world-coins",
@@ -1140,9 +1205,22 @@
     "maxPages": 2,
     "kind": "Colorizer",
     "region": "United States",
-    "coverage": "Up to 500 public catalogue listings, including Chromatics colorized coins and bars alongside other dealer stock. Availability is seller-reported and does not guarantee immediate dispatch. Bounded to 2 pages / 500 feed entries per run.",
+    "coverage": "Up to 500 public catalogue listings, including Chromatics colorized coins and bars alongside other dealer stock. Availability is seller-reported and does not guarantee immediate dispatch. Bounded to 2 pages / 500 feed entries per run. Also scans a dedicated Chromatics colorized silver feed and 4 deeper catalogue pages per run in rotation, up to page 100. Limits and incomplete scans are reported; this is not complete catalogue coverage.",
     "evidenceUrl": "https://www.coinstv.net/pages/for-collectors",
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-13",
+    "discoveryFeeds": [
+      {
+        "id": "chromatics",
+        "label": "Chromatics colorized silver",
+        "endpoint": "https://www.coinstv.net/collections/chromatics/products.json?limit=250",
+        "maxPages": 2,
+        "evidenceUrl": "https://www.coinstv.net/collections/chromatics"
+      }
+    ],
+    "catalogueBackfill": {
+      "pagesPerRun": 4,
+      "maxPage": 100
+    }
   },
   {
     "id": "gr-reserve",
@@ -1154,9 +1232,22 @@
     "maxPages": 2,
     "kind": "Distributor",
     "region": "United States",
-    "coverage": "Up to 200 most recently published dealer listings. Public offer prices and stock flags; manufacturer attributes are source-reported. Bounded to 2 pages / 200 feed entries per run.",
+    "coverage": "Up to 200 most recently published dealer listings. Public offer prices and stock flags; manufacturer attributes are source-reported. Bounded to 2 pages / 200 feed entries per run. Also scans a dedicated Colorized coins feed and 4 deeper catalogue pages per run in rotation, up to page 100. Limits and incomplete scans are reported; this is not complete catalogue coverage.",
     "evidenceUrl": "https://grreserve.com/about/",
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-13",
+    "discoveryFeeds": [
+      {
+        "id": "colorized",
+        "label": "Colorized coins",
+        "endpoint": "https://grreserve.com/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=206",
+        "maxPages": 4,
+        "evidenceUrl": "https://grreserve.com/product-category/collections/colorized-coins-collection/"
+      }
+    ],
+    "catalogueBackfill": {
+      "pagesPerRun": 4,
+      "maxPage": 100
+    }
   },
   {
     "id": "hero-bullion",
@@ -1183,9 +1274,13 @@
     "maxPages": 2,
     "kind": "Dealer",
     "region": "Australia",
-    "coverage": "Up to 500 public dealer listings, filtered for coins, bullion and metal collectibles; other merchandise is excluded when identifiable. Seller variant availability. Bounded to 2 pages / 500 feed entries per run.",
+    "coverage": "Up to 500 public dealer listings, filtered for coins, bullion and metal collectibles; other merchandise is excluded when identifiable. Seller variant availability. Bounded to 2 pages / 500 feed entries per run. Also scans 4 deeper catalogue pages per run in rotation, up to page 100. Limits and incomplete scans are reported; this is not complete catalogue coverage.",
     "evidenceUrl": "https://www.mycollectables.com.au/pages/about-us",
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-13",
+    "catalogueBackfill": {
+      "pagesPerRun": 4,
+      "maxPage": 100
+    }
   },
   {
     "id": "downies",

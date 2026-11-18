@@ -141,7 +141,7 @@ def classify_product(title, product_type, description, tags, attributes=None, me
     if _DEDICATED_TYPE.fullmatch(product_type.replace("-", " ").strip()) or _COLOR.fullmatch(product_type.strip()):
         candidates.append(("Product type", product_type, False))
     for name, value in attrs:
-        if re.search(r"finish|finishing|technique|feature|color|colour|colouring|colorization|veredelung", name, re.I):
+        if re.search(r"finish|finishing|technique|feature|additional|color|colour|colouring|colorization|veredelung", name, re.I):
             # A colorization yes/no field is useful; arbitrary "Finish: yes" is not.
             structured = bool(re.search(r"color|colour", name, re.I)) or bool(re.fullmatch(r"colou?r", value, re.I))
             candidates.append((f"{name} attribute", value, structured))

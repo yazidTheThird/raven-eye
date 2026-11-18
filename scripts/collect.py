@@ -28,6 +28,7 @@ import urllib.robotparser
 # Support both direct CLI execution and importlib-based collector tests.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from classify import classify_product
+from catalog_html import fetch_catalogue
 
 ROOT = Path(__file__).resolve().parents[1]
 USER_AGENT = "RavenEye/1.0 (+https://github.com/yazidTheThird/raven-eye; public-release-monitor)"
@@ -136,6 +137,10 @@ def detect_metal(title, detail=""):
         # Explicit material terms in public German/Portuguese product metadata.
         s = re.sub(r"\bsilber(?:münze|muenze|barren)?\b|\bprata\b", "silver", s)
         s = re.sub(r"\bouro\b", "gold", s)
+        # Element symbols paired with fineness establish material; a named
+        # pot of gold is a design theme, not a statement of composition.
+        s = re.sub(r"\bag\s*\.?999(?:[.,]\d+)?\b", "silver", s)
+        s = re.sub(r"\bpot of gold\b", "", s)
         explicit_copper = explicit_copper_metal(s)
         if explicit_copper is not None:
             return explicit_copper
@@ -378,7 +383,7 @@ def normalize(source, item):
                 if weight:
                     specification_values["weight"] = weight
                     specification_evidence["weight"] = "Source-reported " + label + ": " + values
-            elif label in {"year", "years"} and re.fullmatch(r"20\d{2}", values):
+            elif label in {"year", "years", "year of issue"} and re.fullmatch(r"20\d{2}", values):
                 specification_values["year"] = int(values)
                 specification_evidence["year"] = "Source-reported " + label + ": " + values
             elif label == "mintage" and re.fullmatch(r"[\d][\d, .]*(?:\s*(?:pcs|pieces|coins|units))?", values, re.I):
@@ -393,7 +398,13 @@ def normalize(source, item):
         currency = prices.get("currency_code")
         published = iso(item.get("date_created_gmt"), utc=True)
         url = item.get("permalink")
-        image = next((safe_url(i.get("src")) or safe_url(i.get("thumbnail")) for i in item.get("images", []) if safe_url(i.get("src")) or safe_url(i.get("thumbnail"))), None)
+        images = item.get("images") or []
+        # PHP arrays with missing numeric indexes serialize as objects. Some
+        # public Woo feeds retain image keys 0, 2, ... after removing an image.
+        if isinstance(images, dict):
+            images = images.values()
+        image = next((safe_url(i.get("src")) or safe_url(i.get("thumbnail")) for i in images
+                      if isinstance(i, dict) and (safe_url(i.get("src")) or safe_url(i.get("thumbnail")))), None)
         status, evidence = woo_status(item)
         variant_count = max(1, len(item.get("variations") or []))
         vendor = ", ".join(clean_tags(item.get("brands"))) or None
@@ -456,6 +467,8 @@ def normalize(source, item):
             break
     if source.get("catalogOnly"):
         status, evidence = "unknown", "Catalogue/announcement source; this feed does not verify current retail availability."
+    if source.get("retailPathSuffix") and not urllib.parse.urlsplit(url).path.rstrip("/").endswith(str(source["retailPathSuffix"]).rstrip("/")):
+        status, evidence = "unknown", "Manufacturer catalogue entry; only this source's explicitly separated retail product paths verify purchase availability."
     # Zero-price placeholders should not appear as free precious metals.
     if price == 0:
         price = None
@@ -555,7 +568,8 @@ def item_url(source, product):
 
 def bounded_pages(source):
     try:
-        return max(1, min(MAX_PAGES, int(source.get("maxPages", 1))))
+        maximum = 8 if source.get("type") == "html_catalog" else MAX_PAGES
+        return max(1, min(maximum, int(source.get("maxPages", 1))))
     except (TypeError, ValueError):
         return 1
 
@@ -570,6 +584,8 @@ def page_url(url, page):
 
 
 def page_size(source):
+    if source.get("type") == "html_catalog":
+        return max(1, min(80, int(source.get("limit", 12))))
     query = dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(source.get("endpoint", "")).query))
     key = "limit" if source["type"] == "shopify" else "per_page"
     default = 250 if source["type"] == "shopify" else 100
@@ -647,6 +663,22 @@ def fetch_source(source, old_products, previous_health=None):
     # A directory is a useful, explicit coverage gap, never a pretend live feed.
     if source["type"] == "directory":
         return [], 0, [], {"pagesFetched": 0, "paginationErrors": [], "skippedRechecks": 0}
+    if source["type"] == "html_catalog":
+        items, report = fetch_catalogue(Fetcher(), source, bounded_pages(source))
+        normalized = []
+        for item in items:
+            current = normalize({**source, "type": "woocommerce", "catalogOnly": True}, item)
+            if current:
+                current.update({"discoveryReason": "latest_window", "baselineDiscovery": False})
+                if source.get("catalogueMaker"):
+                    current["makerEvidence"] = "Official maker's own product catalogue."
+                normalized.append(current)
+        if not normalized:
+            raise ValueError("Public HTML catalogue had no relevant releases; previous observations preserved")
+        report.update({"acceptedCount": len(normalized), "rejectedCount": len(items) - len(normalized),
+                       "windowLimit": min(bounded_pages(source) * page_size(source), max(1, min(80, int(source.get("maxProducts", 80))))),
+                       "detailLimit": max(1, min(80, int(source.get("maxProducts", 80))))})
+        return normalized, len(items), [], report
     if source["type"] not in {"shopify", "woocommerce", "wordpress"}:
         raise ValueError("Unsupported public feed type")
     fetcher = Fetcher()
@@ -893,7 +925,7 @@ def collect(config, previous, at):
         sources.append(health)
     products.sort(key=lambda p: (p.get("publishedAt") or p["firstSeenAt"], p["id"]), reverse=True)
     return {"schemaVersion": 1, "generatedAt": at, "sources": sources, "products": products,
-            "methodology": {"firstSeen": "First successful Raven Eye observation, not the original release date.", "publishedAt": "Seller publication timestamp when exposed; not a verified mint launch date.", "status": "Seller feed observation at lastCheckedAt; a source outage or absent listing never implies sold out.", "prices": "Original seller currency; taxes, shipping, quantity tiers and local storefront conversion may differ. No currency conversion.", "maker": "Reported brand/vendor or an explicit maker attribute from the seller's feed; not independent verification of the physical manufacturer.", "coverage": "Automatic sources refresh bounded primary catalogue windows (at most four pages). Selected sources also scan focused collections and rotating deeper pages, each with a separate fixed budget. A capped window or scan is not complete catalogue coverage. Older WooCommerce and WordPress listings are rechecked in rotation; Shopify stock checks advance only when a listing reappears in a public collection or catalogue feed. Directory entries have no automatic product monitoring. Missing listings retain historical observations; this is not an exhaustive catalogue of every maker or release.", "baseline": "Initial source and focused-collection imports, plus discoveries only in rotating older catalogue pages, do not create new-release alerts. New means first detected outside those baseline imports; it does not verify a mint release date."}}
+            "methodology": {"firstSeen": "First successful Raven Eye observation, not the original release date.", "publishedAt": "Seller publication timestamp when exposed; not a verified mint launch date.", "status": "Seller feed observation at lastCheckedAt; a source outage or absent listing never implies sold out.", "prices": "Original seller currency; taxes, shipping, quantity tiers and local storefront conversion may differ. No currency conversion.", "maker": "Reported brand/vendor or an explicit maker attribute from the seller's feed; not independent verification of the physical manufacturer.", "coverage": "Automatic JSON feeds refresh bounded primary catalogue windows (at most four pages). Public HTML maker catalogues follow up to eight linked pages and 80 product details; their entries do not establish retail availability. Selected sources also scan focused collections and rotating deeper pages, each with a separate fixed budget. A capped window or scan is not complete catalogue coverage. Older WooCommerce and WordPress listings are rechecked in rotation; Shopify stock checks advance only when a listing reappears in a public collection or catalogue feed. Directory entries have no automatic product monitoring. Missing listings retain historical observations; this is not an exhaustive catalogue of every maker or release.", "baseline": "Initial source and focused-collection imports, plus discoveries only in rotating older catalogue pages, do not create new-release alerts. New means first detected outside those baseline imports; it does not verify a mint release date."}}
 
 
 def main():
@@ -912,7 +944,7 @@ def main():
         result["sources"].extend(kept)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     tmp = args.output.with_suffix(".tmp")
-    tmp.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
+    tmp.write_text(json.dumps(result, ensure_ascii=False, separators=(",", ":")) + "\n")
     tmp.replace(args.output)
     for source in result["sources"]:
         print(f"{source['name']}: {source['status']}, {source['count']} observed" + (f" ({source['error']})" if source.get("error") else ""))

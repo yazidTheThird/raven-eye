@@ -46,6 +46,16 @@ The **Copper** focus and sidebar shortcut include plain, colorized, and silver- 
 
 In addition to copper listings found in the existing mixed-metal feeds, Raven Eye reads Metal2go’s public Copper collection, bounded to four pages of 250 entries per run. Listing-level material evidence still controls classification because that collection also contains other metals. These are seller listings, not a count of unique designs across shops. First-seen, publication, availability, and price-history rules are the same as for silver.
 
+## Direct mint and colorizer tracking
+
+Carpathian Mint and Hayleybug Mint are now automatic sources, rather than directory-only entries. Direct feeds also cover Asturmint, SCE Coins, Precious Metal Collectors, Lithuanian Mint, Arverni Mint, and Pressburg Mint.
+
+- **Carpathian Mint:** reads its public own-mint catalogue, following the site's pagination links through up to eight pages and 80 product details. Structured product metadata supplies images, material, weight, mintage, finishing, and publication dates. This manufacturer catalogue does not expose retail stock or prices, so availability remains unconfirmed. Partner listings outside that category are excluded.
+- **Asturmint:** reads both the maker catalogue and separate retail listings. Only the source's verified `-store/` product paths establish purchase availability; catalogue entries remain unconfirmed even when generic storefront flags say they are in stock. Catalogue and retail records may describe the same design and retain their separate source IDs and URLs.
+- **SCE Coins, Precious Metal Collectors, Lithuanian Mint, Arverni Mint, Pressburg Mint, and Hayleybug Mint:** use public storefront feeds with source-reported prices and availability. Lithuanian Mint uses its English catalogue. Hayleybug also rotates through two older catalogue pages per run, beyond its latest 400 entries, up to page 100.
+
+These sources are subject to the same first-observation baselines and history rules as all other feeds. Product finishing attributes such as “Additional: UV printing” count as color evidence; printed packaging and gilding alone do not. New source imports are not announcements of new coin releases.
+
 ## Local use
 
 Requirements: Node.js 22 or newer and Python 3.11 or newer. The application has no package-install step.
@@ -69,6 +79,7 @@ app.js                    Rendering and interactions
 lib.mjs                   Shared filtering and formatting logic
 sources.json              Automatic feeds and official source directory
 scripts/collect.py        Public-feed collector and history merge
+scripts/catalog_html.py   Bounded public maker-catalogue reader
 data/releases.json        Persistent source observations
 scripts/build.mjs         Static-only deployment packaging
 tests/                    Data and interface-logic checks
@@ -95,7 +106,7 @@ GitHub may delay scheduled work, and inactive public repositories can have sched
 
 Add only public, permitted endpoints to `sources.json`, using an adapter supported by `scripts/collect.py`. Test extraction against real products and ambiguous stock states before enabling a new source. Do not treat promotional copy as a live inventory count. Preserve first-seen timestamps and source identity when changing adapters.
 
-Automatic adapters support Shopify product feeds, WooCommerce Store API products, and WordPress product posts. `maxPages` sets the latest window of up to four pages. Optional `discoveryFeeds` entries use the same adapter and specify `id`, `label`, `endpoint`, and `maxPages` (up to four each). Optional `catalogueBackfill: {"pagesPerRun": 4, "maxPage": 100}` adds bounded rotating deeper scans. Each source's coverage text explains the scope. Request pacing respects published crawl delays. Blocked endpoints are not bypassed. A failed source keeps its previous observations and their actual last-check times.
+Automatic JSON adapters support Shopify product feeds, WooCommerce Store API products, and WordPress product posts. `maxPages` sets the latest JSON window of up to four pages. The `html_catalog` adapter follows observed same-origin pagination and product links, up to eight catalogue pages and 80 product details, and requires explicit Product metadata; catalogue entries do not establish retail availability. Optional `discoveryFeeds` entries use the same adapter and specify `id`, `label`, `endpoint`, and `maxPages` (up to four each). Optional `catalogueBackfill: {"pagesPerRun": 4, "maxPage": 100}` adds bounded rotating deeper scans. Each source's coverage text explains the scope. Request pacing respects published crawl delays. Blocked endpoints are not bypassed. A failed source keeps its previous observations and their actual last-check times.
 
 Use `type: "directory"` with `trackingReason` for verified official sources without a supported feed. Include `kind`, `region`, and `evidenceUrl` for the searchable directory. The collector makes no requests to directory-only sources. Feed availability can change, so a supported adapter is not a promise of perpetual access.
 

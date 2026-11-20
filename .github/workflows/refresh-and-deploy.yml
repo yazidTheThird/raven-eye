@@ -44,7 +44,7 @@ jobs:
       - name: Save observed prices and availability history
         shell: bash
         run: |
-          git add data/releases.json
+          git add -A data/
           if ! git diff --cached --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

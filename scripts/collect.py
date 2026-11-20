@@ -13,6 +13,8 @@ import concurrent.futures
 import copy
 import datetime as dt
 import html
+import gzip
+import importlib
 from html.parser import HTMLParser
 import json
 import math
@@ -31,12 +33,19 @@ from classify import classify_product
 from catalog_html import fetch_catalogue
 
 ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_SNAPSHOT = ROOT / "data" / "releases.json.gz"
 USER_AGENT = "RavenEye/1.0 (+https://github.com/yazidTheThird/raven-eye; public-release-monitor)"
 TIMEOUT = 25
 MAX_RESPONSE = 24 * 1024 * 1024
 RECHECK_LIMIT = 12
 MAX_PAGES = 4
 VALID_STATUSES = {"available", "presale", "upcoming", "backorder", "out_of_stock", "unknown"}
+CATALOG_ADAPTERS = {
+    "html_catalog": "catalog_html", "retail_catalog": "catalog_retail",
+    "prestashop_catalog": "catalog_prestashop", "krakow_catalog": "catalog_krakow",
+    "numistrade_catalog": "catalog_numistrade", "cbr_catalog": "catalog_issuers",
+    "coins_today": "catalog_issuers",
+}
 
 
 class TextExtractor(HTMLParser):
@@ -70,6 +79,28 @@ def text(value):
 
 def now_iso():
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def read_snapshot(path):
+    """Read compressed storage or the original JSON without changing records."""
+    if not path.exists():
+        legacy = path.with_suffix("") if path.suffix == ".gz" else path
+        if not legacy.exists():
+            return {}
+        path = legacy
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, "rt", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def write_snapshot(path, snapshot):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = (json.dumps(snapshot, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
+    if path.suffix == ".gz":
+        payload = gzip.compress(payload, mtime=0)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_bytes(payload)
+    temporary.replace(path)
 
 
 def iso(value, utc=False):
@@ -139,7 +170,9 @@ def detect_metal(title, detail=""):
         s = re.sub(r"\bouro\b", "gold", s)
         # Element symbols paired with fineness establish material; a named
         # pot of gold is a design theme, not a statement of composition.
-        s = re.sub(r"\bag\s*\.?999(?:[.,]\d+)?\b", "silver", s)
+        for symbol, name in [("ag", "silver"), ("au", "gold"), ("pt", "platinum")]:
+            purity = r"\.?9\d{2}(?:[.,]\d+)?"
+            s = re.sub(r"\b" + symbol + r"\s*" + purity + r"\b|(?<!\w)" + purity + r"\s*" + symbol + r"\b", name, s)
         s = re.sub(r"\bpot of gold\b", "", s)
         explicit_copper = explicit_copper_metal(s)
         if explicit_copper is not None:
@@ -386,7 +419,7 @@ def normalize(source, item):
             elif label in {"year", "years", "year of issue"} and re.fullmatch(r"20\d{2}", values):
                 specification_values["year"] = int(values)
                 specification_evidence["year"] = "Source-reported " + label + ": " + values
-            elif label == "mintage" and re.fullmatch(r"[\d][\d, .]*(?:\s*(?:pcs|pieces|coins|units))?", values, re.I):
+            elif label in {"mintage", "total mintage"} and re.fullmatch(r"[\d][\d, .]*(?:\s*(?:pcs|pieces|coins|units))?", values, re.I):
                 count = int(re.sub(r"[^\d]", "", values))
                 if 0 < count < 100_000_000:
                     specification_values["mintage"] = count
@@ -514,8 +547,8 @@ class Fetcher:
         self.robots = {}
         self.last_request = {}
 
-    def raw(self, url):
-        request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json,text/plain,*/*"})
+    def raw(self, url, accept=None):
+        request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": accept or "application/json,text/plain,*/*"})
         # One retry for transient server errors only; never retry denials/challenges.
         for attempt in range(2):
             try:
@@ -568,7 +601,7 @@ def item_url(source, product):
 
 def bounded_pages(source):
     try:
-        maximum = 8 if source.get("type") == "html_catalog" else MAX_PAGES
+        maximum = 8 if source.get("type") in {"html_catalog", "retail_catalog"} else MAX_PAGES
         return max(1, min(maximum, int(source.get("maxPages", 1))))
     except (TypeError, ValueError):
         return 1
@@ -584,7 +617,7 @@ def page_url(url, page):
 
 
 def page_size(source):
-    if source.get("type") == "html_catalog":
+    if source.get("type") in CATALOG_ADAPTERS:
         return max(1, min(80, int(source.get("limit", 12))))
     query = dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(source.get("endpoint", "")).query))
     key = "limit" if source["type"] == "shopify" else "per_page"
@@ -663,21 +696,52 @@ def fetch_source(source, old_products, previous_health=None):
     # A directory is a useful, explicit coverage gap, never a pretend live feed.
     if source["type"] == "directory":
         return [], 0, [], {"pagesFetched": 0, "paginationErrors": [], "skippedRechecks": 0}
-    if source["type"] == "html_catalog":
-        items, report = fetch_catalogue(Fetcher(), source, bounded_pages(source))
+    if source["type"] in CATALOG_ADAPTERS:
+        adapter = importlib.import_module(CATALOG_ADAPTERS[source["type"]])
+        items, report = adapter.fetch_catalogue(Fetcher(), source, bounded_pages(source))
+        prior_by_id = {p["id"]: p for p in old_products}
         normalized = []
         for item in items:
-            current = normalize({**source, "type": "woocommerce", "catalogOnly": True}, item)
+            catalogue_only = source["type"] == "html_catalog" or source.get("catalogOnly", False)
+            current = normalize({**source, "type": "woocommerce", "catalogOnly": catalogue_only}, item)
             if current:
+                prior = prior_by_id.get(current["id"])
+                if item.get("_metadataPartial") and prior:
+                    for key in ["description", "tags", "metal", "category", "weight", "year", "mintage",
+                                "specificationEvidence", "isColorized", "colorizedSilver", "isColorizedSilverCoin",
+                                "colorizedEvidence", "finish", "maker", "makerEvidence", "vendor"]:
+                        if key in prior:
+                            current[key] = copy.deepcopy(prior[key])
+                if not catalogue_only and item.get("_status") in VALID_STATUSES:
+                    current["status"] = item["_status"]
+                    current["statusEvidence"] = item.get("_statusEvidence") or "Explicit public catalogue availability."
+                if "_price" in item and not catalogue_only:
+                    current["price"] = number(item["_price"]) or None
+                    currency = item.get("_currency")
+                    current["currency"] = currency if isinstance(currency, str) and re.fullmatch(r"[A-Z]{3}", currency) else None
+                release_date = item.get("_releaseDate")
+                if isinstance(release_date, str):
+                    try:
+                        current["sourceReleaseDate"] = dt.date.fromisoformat(release_date).isoformat()
+                    except ValueError:
+                        pass
                 current.update({"discoveryReason": "latest_window", "baselineDiscovery": False})
+                if source.get("collectionMaker"):
+                    current["dealerCollections"] = [{"maker": source["collectionMaker"],
+                                                      "label": source["collectionMaker"],
+                                                      "url": source.get("evidenceUrl", source["endpoint"])}]
                 if source.get("catalogueMaker"):
                     current["makerEvidence"] = "Official maker's own product catalogue."
                 normalized.append(current)
         if not normalized:
             raise ValueError("Public HTML catalogue had no relevant releases; previous observations preserved")
-        report.update({"acceptedCount": len(normalized), "rejectedCount": len(items) - len(normalized),
-                       "windowLimit": min(bounded_pages(source) * page_size(source), max(1, min(80, int(source.get("maxProducts", 80))))),
-                       "detailLimit": max(1, min(80, int(source.get("maxProducts", 80))))})
+        report.update({"acceptedCount": len(normalized), "rejectedCount": len(items) - len(normalized)})
+        window_limit = bounded_pages(source) * page_size(source)
+        if source.get("maxProducts"):
+            report.setdefault("detailLimit", max(1, min(80, int(source["maxProducts"]))))
+            window_limit = min(window_limit, max(1, min(80, int(source["maxProducts"]))))
+        report.setdefault("windowLimit", window_limit)
+        report.setdefault("skippedRechecks", 0)
         return normalized, len(items), [], report
     if source["type"] not in {"shopify", "woocommerce", "wordpress"}:
         raise ValueError("Unsupported public feed type")
@@ -712,6 +776,12 @@ def fetch_source(source, old_products, previous_health=None):
             if item_id not in items_by_id:
                 items_by_id[item_id] = item
                 origins[item_id] = {"discoveryReason": "discovery_feed", "discoveryFeedId": feed_id, "baselineDiscovery": baseline}
+            if feed.get("maker"):
+                memberships = origins[item_id].setdefault("dealerCollections", [])
+                membership = {"maker": feed["maker"], "label": feed.get("label", feed_id),
+                              "url": feed.get("evidenceUrl", feed["endpoint"])}
+                if membership not in memberships:
+                    memberships.append(membership)
     limits = backfill_limits(source)
     if limits:
         start, budget, maximum = limits
@@ -803,6 +873,13 @@ def merge_products(previous, observations, at, baseline=False):
     for observed in observations:
         old = result.get(observed["id"])
         current = copy.deepcopy(observed)
+        # A dealer collection supplies discoverability without replacing the
+        # seller's own manufacturer field or pretending to be a mint feed.
+        if old and old.get("dealerCollections"):
+            memberships = current.setdefault("dealerCollections", [])
+            for membership in old["dealerCollections"]:
+                if membership not in memberships:
+                    memberships.append(membership)
         if old and not current.get("publishedAt"):
             current["publishedAt"] = old.get("publishedAt")
         if old and not current.get("maker") and old.get("maker"):
@@ -881,7 +958,7 @@ def collect(config, previous, at):
     for source in config:
         old = old_sources.get(source["id"], {})
         prior_products = [p for p in products if p["sourceId"] == source["id"]]
-        health = {k: source[k] for k in ["id", "name", "url", "type", "coverage", "kind", "region", "evidenceUrl", "trackingReason"] if k in source}
+        health = {k: source[k] for k in ["id", "name", "url", "type", "coverage", "kind", "region", "evidenceUrl", "trackingReason", "guideName"] if k in source}
         health.update({"tracking": "directory" if source["type"] == "directory" else "automatic", "lastSuccess": old.get("lastSuccess"), "firstSuccess": old.get("firstSuccess") or min((p["firstSeenAt"] for p in prior_products), default=old.get("lastSuccess")), "count": len(prior_products), "observedCount": 0})
         if source["type"] == "directory":
             reason = source.get("trackingReason") or "Listed in the source directory; no supported automatic public feed is connected."
@@ -923,29 +1000,48 @@ def collect(config, previous, at):
                 health["note"] = " ".join(notes)
         health["colorizedSilverCoinCount"] = sum(p.get("isColorizedSilverCoin") is True for p in products if p["sourceId"] == source["id"])
         sources.append(health)
+    # Report dealer coverage under its maker's directory entry without counting
+    # a dealer catalogue as a direct connection to that mint.
+    health_by_id = {s["id"]: s for s in sources}
+    for configured in config:
+        coverage = []
+        for reference in configured.get("dealerFeeds", []):
+            dealer = health_by_id.get(reference["sourceId"], {})
+            feed = next((f for f in dealer.get("discoveryFeeds", []) if f["id"] == reference.get("feedId")), None)
+            if feed is None and reference.get("feedId"):
+                coverage.append({"sourceName": dealer.get("name", reference["sourceId"]), "status": "error", "count": 0})
+            else:
+                state = feed or dealer
+                coverage.append({"sourceName": dealer.get("name", reference["sourceId"]),
+                                 "status": state.get("status", "error") if dealer.get("status") != "error" else "error",
+                                 "count": state.get("fetchedCount", state.get("observedCount", 0)),
+                                 "lastSuccess": state.get("lastSuccess"), "url": reference.get("evidenceUrl", dealer.get("url"))})
+        if coverage:
+            health_by_id[configured["id"]]["dealerTracking"] = coverage
     products.sort(key=lambda p: (p.get("publishedAt") or p["firstSeenAt"], p["id"]), reverse=True)
     return {"schemaVersion": 1, "generatedAt": at, "sources": sources, "products": products,
-            "methodology": {"firstSeen": "First successful Raven Eye observation, not the original release date.", "publishedAt": "Seller publication timestamp when exposed; not a verified mint launch date.", "status": "Seller feed observation at lastCheckedAt; a source outage or absent listing never implies sold out.", "prices": "Original seller currency; taxes, shipping, quantity tiers and local storefront conversion may differ. No currency conversion.", "maker": "Reported brand/vendor or an explicit maker attribute from the seller's feed; not independent verification of the physical manufacturer.", "coverage": "Automatic JSON feeds refresh bounded primary catalogue windows (at most four pages). Public HTML maker catalogues follow up to eight linked pages and 80 product details; their entries do not establish retail availability. Selected sources also scan focused collections and rotating deeper pages, each with a separate fixed budget. A capped window or scan is not complete catalogue coverage. Older WooCommerce and WordPress listings are rechecked in rotation; Shopify stock checks advance only when a listing reappears in a public collection or catalogue feed. Directory entries have no automatic product monitoring. Missing listings retain historical observations; this is not an exhaustive catalogue of every maker or release.", "baseline": "Initial source and focused-collection imports, plus discoveries only in rotating older catalogue pages, do not create new-release alerts. New means first detected outside those baseline imports; it does not verify a mint release date."}}
+            "methodology": {"firstSeen": "First successful Raven Eye observation, not the original release date.", "publishedAt": "Seller publication timestamp when exposed; not a verified mint launch date.", "status": "Seller feed observation at lastCheckedAt; a source outage or absent listing never implies sold out.", "prices": "Original seller currency; taxes, shipping, quantity tiers and local storefront conversion may differ. No currency conversion.", "maker": "Reported brand/vendor or an explicit maker attribute from the seller's feed; not independent verification of the physical manufacturer.", "coverage": "Automatic JSON feeds refresh bounded primary catalogue windows (at most four pages). Public catalogue adapters use configured page and detail budgets. Maker-only catalogues do not establish retail availability; retail readers require explicit product evidence. Issuer release dates are separate from listing publication. Selected sources also scan focused collections and rotating deeper pages, each with a separate fixed budget. A capped window or scan is not complete catalogue coverage. Older WooCommerce and WordPress listings are rechecked in rotation; Shopify stock checks advance only when a listing reappears in a public collection or catalogue feed. Directory entries have no direct product feed; separately reported dealer collections may be monitored. Missing listings retain historical observations; this is not an exhaustive catalogue of every maker or release.", "baseline": "Initial source and focused-collection imports, plus discoveries only in rotating older catalogue pages, do not create new-release alerts. New means first detected outside those baseline imports; it does not verify a mint release date."}}
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sources", type=Path, default=ROOT / "sources.json")
-    parser.add_argument("--output", type=Path, default=ROOT / "data" / "releases.json")
+    parser.add_argument("--output", type=Path, default=DEFAULT_SNAPSHOT)
     parser.add_argument("--only", help="Comma-separated source IDs, for diagnostics")
     args = parser.parse_args()
     config = json.loads(args.sources.read_text())
     if args.only:
         config = [s for s in config if s["id"] in args.only.split(",")]
-    previous = json.loads(args.output.read_text()) if args.output.exists() else {}
+    previous = read_snapshot(args.output)
     result = collect(config, previous, now_iso())
     if args.only:
         kept = [s for s in previous.get("sources", []) if s["id"] not in args.only.split(",")]
         result["sources"].extend(kept)
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    tmp = args.output.with_suffix(".tmp")
-    tmp.write_text(json.dumps(result, ensure_ascii=False, separators=(",", ":")) + "\n")
-    tmp.replace(args.output)
+    write_snapshot(args.output, result)
+    # Migrate only the canonical full snapshot, after its replacement is safe.
+    # Explicit diagnostic outputs and partial runs never remove another file.
+    if args.output == DEFAULT_SNAPSHOT and not args.only:
+        DEFAULT_SNAPSHOT.with_suffix("").unlink(missing_ok=True)
     for source in result["sources"]:
         print(f"{source['name']}: {source['status']}, {source['count']} observed" + (f" ({source['error']})" if source.get("error") else ""))
     print(f"Saved {len(result['products'])} tracked listings to {args.output}")

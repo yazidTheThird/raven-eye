@@ -3,7 +3,7 @@ export const CHANGE={new:'Newly detected',available:'Now available',restock:'Bac
 export const escapeHTML=v=>String(v??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
 export function safeURL(value){try{const u=new URL(value);return ['https:','http:'].includes(u.protocol)?u.href:''}catch{return ''}}
 export const dateValue=v=>Number.isFinite(Date.parse(v))?Date.parse(v):0;
-export const searchable=p=>[p.title,p.sourceName,p.maker,p.sourceKind,p.description,...(p.tags||[])].join(' ').toLowerCase();
+export const searchable=p=>[p.title,p.sourceName,p.maker,p.sourceKind,p.description,...(p.tags||[]),...(p.dealerCollections||[]).map(c=>c.maker)].join(' ').toLowerCase();
 export const FOCUS_LABELS={'colorized-silver-coins':'Colorized silver coins','colorized-silver':'All colorized silver',copper:'Copper coins & collectibles',all:'All releases'};
 const colorTerms='(?:colou?ri[sz](?:ed|ation)|colou?red|enamel(?:led|ed)?|(?:full[ -])?colou?r[ -](?:print(?:ed|ing)?|finish)|(?:digital|uv)[ -]print(?:ed|ing)?)';
 const colorWords=new RegExp('\\b'+colorTerms+'\\b','i');
@@ -34,7 +34,7 @@ export function filterSources(sources,filters={}){const terms=(filters.query||''
  if(filters.tracking==='directory'&&isAutomaticSource(s))return false;
  if(filters.kind&&filters.kind!=='all'&&s.kind!==filters.kind)return false;
  if(filters.region&&filters.region!=='all'&&s.region!==filters.region)return false;
- const haystack=[s.name,s.kind,s.region,s.url].join(' ').toLowerCase();return terms.every(t=>haystack.includes(t));
+ const haystack=[s.name,s.guideName,s.kind,s.region,s.url].join(' ').toLowerCase();return terms.every(t=>haystack.includes(t));
  }).sort((a,b)=>a.name.localeCompare(b.name));}
 export function isRecentChange(p,now=Date.now()){return p.change&&dateValue(p.change.at)>now-7*86400000&&dateValue(p.change.at)<=now+60000;}
 export function filterProducts(products,filters,watchlist=new Set(),now=Date.now()){

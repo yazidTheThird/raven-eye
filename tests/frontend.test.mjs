@@ -79,3 +79,10 @@ test('copper focus composes with availability, search, mintage, source and saved
  assert.deepEqual(filterProducts(copperListings,{focus:'copper',status:'out_of_stock'}).map(p=>p.id),['copper-bar']);
  assert.deepEqual(filterProducts(copperListings,{focus:'copper',view:'watchlist'},new Set(['copper-statue','copper-bar','silver-coin'])).map(p=>p.id),['copper-statue','copper-bar']);
 });
+
+test('maker collection searches preserve the actual listing dealer',()=>{
+ const listing={id:'dealer:42',title:'Phoenix 2oz Silver Coin',sourceId:'dealer',sourceName:'Dealer One',dealerCollections:[{maker:'Mint of MK / The Gold Village',url:'https://example.com/mk'}]};
+ assert.deepEqual(filterProducts([listing],{query:'gold village',source:'dealer'}),[listing]);
+ assert.deepEqual(filterProducts([listing],{query:'unrelated mint'}),[]);
+ assert.equal(listing.sourceName,'Dealer One');
+});

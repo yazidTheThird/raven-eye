@@ -62,16 +62,16 @@ _COLOR = re.compile(
     r"(?:full|multi|selective)[ -]colou?r|"
     r"uv[ -]colou?r|printed[ -](?:coins?|rounds?)|"
     r"(?:uv|hd|high[ -]definition|digital|pad|gicl[ée]e)[ -](?:print(?:ed|ing)?)|"
-    r"enamel(?:led|ed)?|koloriert|coloriert|kolorowan[ay]e?|koloryzowan[ay]e?|"
+    r"enamel(?:led|ed)?|koloriert|coloriert|farbapplikation|farbveredelt|kolorowan[ay]e?|koloryzowan[ay]e?|"
     r"color[ée]e?s?|colorid[oa]s?|colorat[oa])\b", re.I)
 _PACKAGING = re.compile(
     r"\b(?:box|boxes|packaging|package|case|capsule|certificate|coa|booklet|"
-    r"brochure|cardboard|display stand|presentation folder)\b", re.I)
+    r"brochure|cardboard|display stand|presentation folder|verpackung|etui|zertifikat)\b", re.I)
 _PRODUCT = re.compile(
     r"\b(?:coin|round|bar|reverse|obverse|surface|finish|design|edition|issue|piece|"
     r"medal|medallion|figurine|statue|sculpture|foil|poster)\b", re.I)
 _NEGATION = re.compile(
-    r"\b(?:not|never|without|non|unlike|no)\b[^.;:!?]{0,35}$", re.I)
+    r"\b(?:not|never|without|non|unlike|no|ohne|nicht|keine)\b[^.;:!?]{0,35}$", re.I)
 _GENERIC = re.compile(
     r"\b(?:historically|traditionally|some coins|many coins|other coins|"
     r"we (?:sell|offer|stock)|our (?:range|selection|collection) of|"

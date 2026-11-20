@@ -1,0 +1,256 @@
+{
+  "guideUrl": "https://agaunews.com/where-to-buy-our-sponsors/",
+  "checkedAt": "2026-11-20",
+  "entries": [
+    {
+      "guideName": "ALLCOLLECT",
+      "sourceId": "allcollect",
+      "mode": "dealer_collection"
+    },
+    {
+      "guideName": "ARMAGEDDON MINT",
+      "sourceId": "armageddon-mint",
+      "mode": "direct"
+    },
+    {
+      "guideName": "ARTISAN COIN PRODUCTIONS",
+      "sourceId": "artisan-coin-productions",
+      "mode": "direct"
+    },
+    {
+      "guideName": "ART MINT",
+      "sourceId": "art-mint",
+      "mode": "direct"
+    },
+    {
+      "guideName": "ASTURMINT",
+      "sourceId": "asturmint",
+      "mode": "direct"
+    },
+    {
+      "guideName": "AUSTRIAN MINT",
+      "sourceId": "austrian-mint",
+      "mode": "direct"
+    },
+    {
+      "guideName": "BANK OF CHINA",
+      "sourceId": "china-gold-coin",
+      "mode": "dealer_collection"
+    },
+    {
+      "guideName": "BANK OF MEXICO",
+      "sourceId": "bank-of-mexico",
+      "mode": "dealer_collection"
+    },
+    {
+      "guideName": "CARPATHIAN MINT",
+      "sourceId": "carpathian-mint",
+      "mode": "direct"
+    },
+    {
+      "guideName": "CENTRAL BANK OF RUSSIA",
+      "sourceId": "central-bank-russia",
+      "mode": "direct"
+    },
+    {
+      "guideName": "CIT COIN INVEST",
+      "sourceId": "cit-coin-invest",
+      "mode": "dealer_collection"
+    },
+    {
+      "guideName": "COINS TODAY",
+      "sourceId": "coins-today",
+      "mode": "direct"
+    },
+    {
+      "guideName": "CZECH MINT",
+      "sourceId": "czech-mint",
+      "mode": "dealer_collection"
+    },
+    {
+      "guideName": "EAST INDIA COMPANY",
+      "sourceId": "east-india-company",
+      "mode": "dealer_collection"
+    },
+    {
+      "guideName": "EMPORIUM HAMBURG",
+      "sourceId": "emporium-hamburg",
+      "mode": "direct"
+    },
+    {
+      "guideName": "GERMANIA MINT",
+      "sourceId": "germania-mint",
+      "mode": "direct"
+    },
+    {
+      "guideName": "GR RESERVE",
+      "sourceId": "gr-reserve",
+      "mode": "direct"
+    },
+    {
+      "guideName": "JVP MINT",
+      "sourceId": "jvp-mint",
+      "mode": "dealer_collection"
+    },
+    {
+      "guideName": "KOMSCO KOREA",
+      "sourceId": "komsco",
+      "mode": "dealer_collection"
+    },
+    {
+      "guideName": "LE GRAND MINT",
+      "sourceId": "le-grand-mint",
+      "mode": "direct"
+    },
+    {
+      "guideName": "LITHUANIAN MINT",
+      "sourceId": "lithuanian-mint",
+      "mode": "direct"
+    },
+    {
+      "guideName": "MDM",
+      "sourceId": "mdm-wholesale",
+      "mode": "dealer_collection"
+    },
+    {
+      "guideName": "MELBOURNE COIN COMPANY",
+      "sourceId": "melbourne-coin-co",
+      "mode": "direct"
+    },
+    {
+      "guideName": "MINT OF GDANSK",
+      "sourceId": "mint-of-gdansk",
+      "mode": "direct"
+    },
+    {
+      "guideName": "MINT OF MK / THE GOLD VILLAGE",
+      "sourceId": "mint-of-mk",
+      "mode": "dealer_collection"
+    },
+    {
+      "guideName": "MINT OF POLAND",
+      "sourceId": "mint-of-poland",
+      "mode": "direct"
+    },
+    {
+      "guideName": "MINT XXI",
+      "sourceId": "mint-xxi",
+      "mode": "direct"
+    },
+    {
+      "guideName": "MONNAIE DE PARIS",
+      "sourceId": "monnaie-de-paris",
+      "mode": "direct"
+    },
+    {
+      "guideName": "NEW ZEALAND MINT",
+      "sourceId": "nz-mint",
+      "mode": "direct"
+    },
+    {
+      "guideName": "NEW ZEALAND POST",
+      "sourceId": "nz-post-collectables",
+      "mode": "direct"
+    },
+    {
+      "guideName": "NUMISCOLLECT",
+      "sourceId": "numiscollect",
+      "mode": "direct"
+    },
+    {
+      "guideName": "NUMISTRADE",
+      "sourceId": "numistrade",
+      "mode": "direct"
+    },
+    {
+      "guideName": "PAMP",
+      "sourceId": "pamp",
+      "mode": "dealer_collection"
+    },
+    {
+      "guideName": "PARTHAVA COIN",
+      "sourceId": "parthava",
+      "mode": "direct"
+    },
+    {
+      "guideName": "PERTH MINT",
+      "sourceId": "perth-mint",
+      "mode": "dealer_collection"
+    },
+    {
+      "guideName": "PIK COINS",
+      "sourceId": "pik-coins",
+      "mode": "direct"
+    },
+    {
+      "guideName": "POBJOY MINT",
+      "sourceId": "pobjoy-mint",
+      "mode": "dealer_collection"
+    },
+    {
+      "guideName": "POWERCOIN",
+      "sourceId": "powercoin",
+      "mode": "direct"
+    },
+    {
+      "guideName": "PRECIOUS METAL COLLECTORS",
+      "sourceId": "pm-collectors",
+      "mode": "direct"
+    },
+    {
+      "guideName": "ROYAL AUSTRALIAN MINT",
+      "sourceId": "royal-australian-mint",
+      "mode": "dealer_collection"
+    },
+    {
+      "guideName": "ROYAL CANADIAN MINT",
+      "sourceId": "royal-canadian-mint",
+      "mode": "dealer_collection"
+    },
+    {
+      "guideName": "ROYAL KRAKOW MINT",
+      "sourceId": "royal-krakow-mint",
+      "mode": "direct"
+    },
+    {
+      "guideName": "ROYAL MINT",
+      "sourceId": "royal-mint",
+      "mode": "dealer_collection"
+    },
+    {
+      "guideName": "SCOTTSDALE MINT",
+      "sourceId": "scottsdale-mint",
+      "mode": "direct"
+    },
+    {
+      "guideName": "SOUTH AFRICAN MINT",
+      "sourceId": "south-african-mint",
+      "mode": "dealer_collection"
+    },
+    {
+      "guideName": "SPECTRES",
+      "sourceId": "spectres",
+      "mode": "direct"
+    },
+    {
+      "guideName": "THE COIN COMPANY",
+      "sourceId": "the-coin-company",
+      "mode": "direct"
+    },
+    {
+      "guideName": "T&S COIN",
+      "sourceId": "ts-coin",
+      "mode": "direct"
+    },
+    {
+      "guideName": "TOWER MINT",
+      "sourceId": "tower-mint",
+      "mode": "direct"
+    },
+    {
+      "guideName": "WORLD COIN APPRECIATION",
+      "sourceId": "world-coin-appreciation",
+      "mode": "dealer_collection"
+    }
+  ]
+}

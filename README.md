@@ -18,7 +18,7 @@ This standalone project lives at [yazidTheThird/raven-eye](https://github.com/ya
 | Price | The source price in its own currency. Shipping, tax, currency conversion, and checkout-specific pricing are not included. |
 | Mintage / weight | Source-provided or conservatively extracted product specifications; missing values stay blank. Shipping weight is not treated as precious-metal weight. |
 
-The source directory covers sovereign mints, private makers, aftermarket colorizers, refiners, and dealers around the world. **Automatically tracked** sources have supported public catalogue feeds. **Directory only** sources link to the official website and state why they are not automatically collected. A directory entry is not evidence of live inventory tracking; it is excluded from the connected-source health total.
+The source directory covers sovereign mints, private makers, aftermarket colorizers, refiners, and dealers around the world. **Automatically tracked** sources have supported public catalogue feeds. Entries without a direct feed explain the gap. Where a named dealer collection is connected, its health is reported separately; remaining **Directory only** sources are links for discovery. A directory entry is not evidence of live inventory tracking; it is excluded from the connected-source health total.
 
 Coverage is a bounded selection of supported feeds, not the entire market. Each automatic source reports its coverage, pagination limit, and collection health. Multiple dealers can list the same release; they remain separate source listings so stock and prices keep their provenance. Products that disappear from a bounded feed are not automatically labelled sold out. The last successful observation remains visible and can become stale. A reported brand comes from the source's vendor or manufacturer field; a retailer's vendor label is not independent verification of who physically made the coin.
 
@@ -56,6 +56,20 @@ Carpathian Mint and Hayleybug Mint are now automatic sources, rather than direct
 
 These sources are subject to the same first-observation baselines and history rules as all other feeds. Product finishing attributes such as “Additional: UV printing” count as color evidence; printed packaging and gilding alone do not. New source imports are not announcements of new coin releases.
 
+## Agaunews guide coverage
+
+The [50-entry comparison](docs/agaunews-coverage.md) maps every named organization in the Agaunews sponsor guide to a configured monitoring route: 32 direct public catalogues/shops and 18 named dealer routes as of 20 November 2026. Three generic collecting categories are not counted as mints. Eleven previously absent guide names are now represented. Banco de México is kept separate from the physical Casa de Moneda mint, and Mint of MK is distinct from MK Barz.
+
+This expansion adds 16 automatic source connections and 19 targeted dealer feeds. Direct additions include Armageddon, Artisan, Royal Krakow, Tower, Numistrade, Bank of Russia, Coins Today, Mint of Gdańsk, Power Coin, Mint of Poland, Austrian Mint, Monnaie de Paris, NZ Post, The Coin Company, and Emporium Hamburg’s owned retailer. A separate Magikos collection supplies JVP listings while JVP’s own shop is paused. Existing sources retain their IDs and observation history.
+
+Dealer collection names are searchable and appear in listing details without replacing the seller or its reported manufacturer. Sources & coverage distinguishes direct feeds, dealer coverage, and directory-only entries, including each dealer check’s result. Initial imports remain baselines. The guide comparison describes configured routes, not guaranteed healthy or exhaustive catalogues; consult the current snapshot for collection health.
+
+Public HTML readers use observed catalogue links, explicit product specifications, and scoped Product/Offer data. Visible preorder labels override misleading generic stock metadata; contradictory retail signals remain unconfirmed. Manufacturer-only catalogues do not imply retail availability. Bank of Russia’s exact issuer release dates appear separately from source-publication dates. Detail enrichment is bounded and older verified specifications are retained when only a catalogue card is refreshed.
+
+Chinese coverage is currently the dealer’s Panda programme, including aftermarket versions, not all Chinese issues. Pobjoy’s direct coin sales ended in 2023; dealer tracking concerns historical releases. Numistrade covers current release pages and their variants. English-only Mint of Poland coverage can lag Polish releases. All other per-source bounds and limitations are listed in the comparison and application.
+
+The retained snapshot is compressed in Git as `data/releases.json.gz` to keep catalogue growth below GitHub’s individual-file limit. Collection migrates the legacy JSON only after writing a valid replacement. The static build emits ordinary `data/releases.json` for the browser; first-seen dates and history are unchanged.
+
 ## Local use
 
 Requirements: Node.js 22 or newer and Python 3.11 or newer. The application has no package-install step.
@@ -80,7 +94,7 @@ lib.mjs                   Shared filtering and formatting logic
 sources.json              Automatic feeds and official source directory
 scripts/collect.py        Public-feed collector and history merge
 scripts/catalog_html.py   Bounded public maker-catalogue reader
-data/releases.json        Persistent source observations
+data/releases.json.gz     Compressed persistent source observations
 scripts/build.mjs         Static-only deployment packaging
 tests/                    Data and interface-logic checks
 .github/workflows/        Scheduled refresh and Pages deployment
@@ -106,7 +120,7 @@ GitHub may delay scheduled work, and inactive public repositories can have sched
 
 Add only public, permitted endpoints to `sources.json`, using an adapter supported by `scripts/collect.py`. Test extraction against real products and ambiguous stock states before enabling a new source. Do not treat promotional copy as a live inventory count. Preserve first-seen timestamps and source identity when changing adapters.
 
-Automatic JSON adapters support Shopify product feeds, WooCommerce Store API products, and WordPress product posts. `maxPages` sets the latest JSON window of up to four pages. The `html_catalog` adapter follows observed same-origin pagination and product links, up to eight catalogue pages and 80 product details, and requires explicit Product metadata; catalogue entries do not establish retail availability. Optional `discoveryFeeds` entries use the same adapter and specify `id`, `label`, `endpoint`, and `maxPages` (up to four each). Optional `catalogueBackfill: {"pagesPerRun": 4, "maxPage": 100}` adds bounded rotating deeper scans. Each source's coverage text explains the scope. Request pacing respects published crawl delays. Blocked endpoints are not bypassed. A failed source keeps its previous observations and their actual last-check times.
+Automatic JSON adapters support Shopify product feeds, WooCommerce Store API products, and WordPress product posts. Additional bounded readers cover verified PrestaShop catalogue data, public retail Product/Offer markup, Royal Krakow, Numistrade, Bank of Russia, and Coins Today. Their configured page/detail budgets are independent; absent or conflicting fields stay unknown. `maxPages` sets the latest JSON window of up to four pages. The `html_catalog` adapter follows observed same-origin pagination and product links, up to eight catalogue pages and 80 product details, and requires explicit Product metadata; catalogue entries do not establish retail availability. Optional `discoveryFeeds` entries use the same adapter and specify `id`, `label`, `endpoint`, and `maxPages` (up to four each). Optional `catalogueBackfill: {"pagesPerRun": 4, "maxPage": 100}` adds bounded rotating deeper scans. Each source's coverage text explains the scope. Request pacing respects published crawl delays. Blocked endpoints are not bypassed. A failed source keeps its previous observations and their actual last-check times.
 
 Use `type: "directory"` with `trackingReason` for verified official sources without a supported feed. Include `kind`, `region`, and `evidenceUrl` for the searchable directory. The collector makes no requests to directory-only sources. Feed availability can change, so a supported adapter is not a promise of perpetual access.
 

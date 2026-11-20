@@ -6,7 +6,7 @@
     "type": "woocommerce",
     "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc",
     "limit": 100,
-    "coverage": "Latest published source listings; older tracked items are rechecked in rotation. Missing prices remain unknown. Bounded to 4 pages / 400 feed entries per run. Also scans a dedicated Colorized silver feed and 4 deeper catalogue pages per run in rotation, up to page 100. Limits and incomplete scans are reported; this is not complete catalogue coverage.",
+    "coverage": "Latest published source listings; older tracked items are rechecked in rotation. Missing prices remain unknown. Bounded to 4 pages / 400 feed entries per run. Also scans a dedicated Colorized silver feed and 4 deeper catalogue pages per run in rotation, up to page 100. Limits and incomplete scans are reported; this is not complete catalogue coverage. Also scans named Agaunews maker collections, each bounded to two pages / 200 dealer entries; dealer provenance is retained.",
     "kind": "Dealer",
     "region": "Canada",
     "evidenceUrl": "https://thecoinshoppe.ca",
@@ -19,6 +19,118 @@
         "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=194&search=colorized",
         "maxPages": 4,
         "evidenceUrl": "https://thecoinshoppe.ca/product-category/silver-coins/"
+      },
+      {
+        "id": "agaunews-cit-coin-invest",
+        "label": "CIT Coin Invest — dealer listings",
+        "maker": "CIT Coin Invest",
+        "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=335",
+        "maxPages": 2,
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/collections-coin-invest-trust/"
+      },
+      {
+        "id": "agaunews-czech-mint",
+        "label": "Czech Mint — dealer listings",
+        "maker": "Czech Mint",
+        "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=38605",
+        "maxPages": 2,
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/czech-mint/"
+      },
+      {
+        "id": "agaunews-mdm-wholesale",
+        "label": "MDM — dealer listings",
+        "maker": "MDM",
+        "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=23561",
+        "maxPages": 2,
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/mdm/"
+      },
+      {
+        "id": "agaunews-mint-of-poland",
+        "label": "Mint of Poland — dealer listings",
+        "maker": "Mint of Poland",
+        "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=299",
+        "maxPages": 2,
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/collections-mint-of-poland/"
+      },
+      {
+        "id": "agaunews-mint-of-mk",
+        "label": "Mint of MK / The Gold Village — dealer listings",
+        "maker": "Mint of MK / The Gold Village",
+        "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=37721",
+        "maxPages": 2,
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/the-gold-village/"
+      },
+      {
+        "id": "agaunews-world-coin-appreciation",
+        "label": "World Coin Appreciation — dealer listings",
+        "maker": "World Coin Appreciation",
+        "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=38633",
+        "maxPages": 2,
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/world-coin-appreciation/"
+      },
+      {
+        "id": "agaunews-perth-mint",
+        "label": "Perth Mint — dealer listings",
+        "maker": "Perth Mint",
+        "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=35617",
+        "maxPages": 2,
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/perth-mint/"
+      },
+      {
+        "id": "agaunews-royal-canadian-mint",
+        "label": "Royal Canadian Mint — dealer listings",
+        "maker": "Royal Canadian Mint",
+        "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=27564",
+        "maxPages": 2,
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/royal-canadian-mint/"
+      },
+      {
+        "id": "agaunews-royal-mint",
+        "label": "The Royal Mint — dealer listings",
+        "maker": "The Royal Mint",
+        "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=38599",
+        "maxPages": 2,
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/royal-mint/"
+      },
+      {
+        "id": "agaunews-south-african-mint",
+        "label": "South African Mint — dealer listings",
+        "maker": "South African Mint",
+        "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=12353",
+        "maxPages": 2,
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/south-african/"
+      },
+      {
+        "id": "agaunews-pamp",
+        "label": "PAMP — dealer listings",
+        "maker": "PAMP",
+        "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=16620",
+        "maxPages": 2,
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/pamp-sa/"
+      },
+      {
+        "id": "agaunews-komsco",
+        "label": "KOMSCO — dealer listings",
+        "maker": "KOMSCO",
+        "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=10699",
+        "maxPages": 2,
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/komsco/"
+      },
+      {
+        "id": "agaunews-mexico-mint",
+        "label": "Bank of Mexico / Casa de Moneda — dealer listings",
+        "maker": "Bank of Mexico / Casa de Moneda",
+        "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=38606",
+        "maxPages": 2,
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/banco-de-mexico/"
+      },
+      {
+        "id": "agaunews-china-gold-coin",
+        "label": "Chinese Panda programme — dealer listings",
+        "maker": "China — Chinese Panda programme",
+        "endpoint": "https://thecoinshoppe.ca/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=27106",
+        "maxPages": 2,
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/chinesepanda/"
       }
     ],
     "catalogueBackfill": {
@@ -51,7 +163,8 @@
     "catalogueBackfill": {
       "pagesPerRun": 4,
       "maxPage": 100
-    }
+    },
+    "guideName": "NUMISCOLLECT"
   },
   {
     "id": "parthava",
@@ -79,7 +192,8 @@
     "catalogueBackfill": {
       "pagesPerRun": 4,
       "maxPage": 100
-    }
+    },
+    "guideName": "PARTHAVA COIN"
   },
   {
     "id": "agoro",
@@ -110,7 +224,8 @@
     "region": "New Zealand",
     "evidenceUrl": "https://newzealandmint.com",
     "maxPages": 4,
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-13",
+    "guideName": "NEW ZEALAND MINT"
   },
   {
     "id": "art-in-coins",
@@ -197,7 +312,8 @@
     "coverage": "Latest 200 public storefront listings; not the entire historical catalogue. Bounded to 2 pages / 200 feed entries per run.",
     "evidenceUrl": "https://www.scottsdalemint.com/",
     "verifiedAt": "2026-11-13",
-    "maxPages": 2
+    "maxPages": 2,
+    "guideName": "SCOTTSDALE MINT"
   },
   {
     "id": "intaglio-mint",
@@ -287,7 +403,8 @@
     "coverage": "Latest 500 public storefront listings; not the entire historical catalogue. Bounded to 2 pages / 500 feed entries per run.",
     "evidenceUrl": "https://spectres.io/products/balloon-dog",
     "verifiedAt": "2026-11-13",
-    "maxPages": 2
+    "maxPages": 2,
+    "guideName": "SPECTRES"
   },
   {
     "id": "prospectors-gold-and-gems",
@@ -498,7 +615,8 @@
     "endpoint": "https://art-mint.com/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc",
     "currency": "EUR",
     "verifiedAt": "2026-11-13",
-    "maxPages": 2
+    "maxPages": 2,
+    "guideName": "ART MINT"
   },
   {
     "id": "ts-coin",
@@ -513,7 +631,8 @@
     "endpoint": "https://ts-coin.com/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc",
     "currency": "EUR",
     "verifiedAt": "2026-11-13",
-    "maxPages": 2
+    "maxPages": 2,
+    "guideName": "T&S COIN"
   },
   {
     "id": "mint-xxi",
@@ -530,7 +649,8 @@
     "maxPages": 2,
     "wpRestBase": "products",
     "catalogOnly": true,
-    "productTypeHint": "Coin"
+    "productTypeHint": "Coin",
+    "guideName": "MINT XXI"
   },
   {
     "id": "germania-mint",
@@ -552,7 +672,8 @@
     ],
     "excludeImageUrls": [
       "https://germaniamint.com/wp-content/uploads/2025/11/OG-image.jpg"
-    ]
+    ],
+    "guideName": "GERMANIA MINT"
   },
   {
     "id": "le-grand-mint",
@@ -567,7 +688,8 @@
     "endpoint": "https://legrandmint.eu/products.json?limit=250",
     "currency": "EUR",
     "verifiedAt": "2026-11-13",
-    "maxPages": 2
+    "maxPages": 2,
+    "guideName": "LE GRAND MINT"
   },
   {
     "id": "golden-noir",
@@ -610,7 +732,8 @@
     "catalogueBackfill": {
       "pagesPerRun": 4,
       "maxPage": 100
-    }
+    },
+    "guideName": "PIK COINS"
   },
   {
     "id": "top-world-coins",
@@ -635,9 +758,17 @@
     "kind": "Private mint",
     "region": "Liechtenstein",
     "coverage": "Innovative collectible coin programs and official launch catalogues.",
-    "evidenceUrl": "https://www.cit.li/en/smartminting/",
-    "trackingReason": "Official launch catalogue; public feed adapter not verified, so automated listing and stock tracking are not enabled.",
-    "verifiedAt": "2026-11-13"
+    "evidenceUrl": "https://www.cit.li/en/coins/",
+    "trackingReason": "Public Nuxt catalogue readable, but catalogue HTML contains no product links; dynamic GraphQL data and launch-page payload need a dedicated supported adapter. No working direct product feed verified.",
+    "verifiedAt": "2026-11-20",
+    "dealerFeeds": [
+      {
+        "sourceId": "coin-shoppe",
+        "feedId": "agaunews-cit-coin-invest",
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/collections-coin-invest-trust/"
+      }
+    ],
+    "guideName": "CIT COIN INVEST"
   },
   {
     "id": "carpathian-mint",
@@ -655,7 +786,8 @@
     "maxProducts": 80,
     "catalogOnly": true,
     "catalogueMaker": "Carpathian Mint",
-    "productTypeHint": "Coin"
+    "productTypeHint": "Coin",
+    "guideName": "CARPATHIAN MINT"
   },
   {
     "id": "allcollect",
@@ -666,20 +798,43 @@
     "region": "Germany",
     "coverage": "Wholesale original coin programs, customized products and international exclusive distribution.",
     "evidenceUrl": "https://allcollect.com/frequently-asked-questions/",
-    "trackingReason": "Public API returned HTTP 401; stock and pricing require a business account. Directory only.",
-    "verifiedAt": "2026-11-13"
+    "trackingReason": "Official FAQ requires business registration for current stock and pricing. Public home/news pages readable; stock account must not be treated as public feed.",
+    "verifiedAt": "2026-11-20",
+    "dealerFeeds": [
+      {
+        "sourceId": "gr-reserve",
+        "feedId": "agaunews-allcollect",
+        "evidenceUrl": "https://grreserve.com/product-category/mints/allcollect/"
+      }
+    ],
+    "guideName": "ALLCOLLECT"
   },
   {
     "id": "mint-of-poland",
     "name": "Mint of Poland / Mennica Polska",
-    "url": "https://en.mennica.com.pl",
-    "type": "directory",
+    "url": "https://inwestycje.mennica.com.pl",
+    "type": "woocommerce",
     "kind": "Private mint",
     "region": "Poland",
-    "coverage": "Collector coins, custom numismatic products and gold bars from Mennica Polska.",
+    "coverage": "Official retail shop English feed: up to 100 recent listings plus two rotating older pages per run. Shop sells its own and other mints; listing brands retain their attribution.",
     "evidenceUrl": "https://en.mennica.com.pl/coins-and-numismatic-products",
-    "trackingReason": "Custom catalogue requires a dedicated adapter or official feed; automated tracking not yet enabled.",
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-20",
+    "endpoint": "https://inwestycje.mennica.com.pl/wp-json/wc/store/v1/products?per_page=25&orderby=date&order=desc&lang=en",
+    "maxPages": 4,
+    "limit": 25,
+    "currency": "PLN",
+    "catalogueBackfill": {
+      "pagesPerRun": 2,
+      "maxPage": 100
+    },
+    "dealerFeeds": [
+      {
+        "sourceId": "coin-shoppe",
+        "feedId": "agaunews-mint-of-poland",
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/collections-mint-of-poland/"
+      }
+    ],
+    "guideName": "MINT OF POLAND"
   },
   {
     "id": "czech-mint",
@@ -690,20 +845,35 @@
     "region": "Czech Republic",
     "coverage": "Original bullion coins, collector coins, medals and custom minting.",
     "evidenceUrl": "https://ceskamincovna.cz/en/",
-    "trackingReason": "Custom storefront; a reliable product adapter or official feed is still needed.",
-    "verifiedAt": "2026-11-13"
+    "trackingReason": "Public custom catalogue readable with direct product URLs and release details, but no standard feed or implemented reliable adapter. Directory only until dedicated parser verified.",
+    "verifiedAt": "2026-11-20",
+    "dealerFeeds": [
+      {
+        "sourceId": "coin-shoppe",
+        "feedId": "agaunews-czech-mint",
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/czech-mint/"
+      }
+    ],
+    "guideName": "CZECH MINT"
   },
   {
     "id": "mint-of-gdansk",
     "name": "Mint of Gdańsk / Mennica Gdańska",
-    "url": "https://mennica-gdanska.pl/en/",
-    "type": "directory",
+    "url": "https://mennica-gdanska.pl",
+    "type": "prestashop_catalog",
     "kind": "Private mint",
     "region": "Poland",
-    "coverage": "Original collectible coin programs, world coins and upcoming releases.",
-    "evidenceUrl": "https://mennica-gdanska.pl/en/",
-    "trackingReason": "PrestaShop-style storefront; supported public product feed not verified. Directory only.",
-    "verifiedAt": "2026-11-13"
+    "coverage": "Direct own-release catalogue: up to four pages of 45 listings. Latest 24 product pages enrich specifications; visible catalogue availability overrides generic stock metadata.",
+    "evidenceUrl": "https://mennica-gdanska.pl/en/13-our-releases",
+    "verifiedAt": "2026-11-20",
+    "endpoint": "https://mennica-gdanska.pl/en/13-our-releases",
+    "currency": "PLN",
+    "maxPages": 4,
+    "limit": 45,
+    "maxDetails": 24,
+    "productTypeHint": "Coin",
+    "catalogueMaker": "Mint of Gdańsk",
+    "guideName": "MINT OF GDANSK"
   },
   {
     "id": "mdm-wholesale",
@@ -714,8 +884,16 @@
     "region": "Germany",
     "coverage": "Original licensed collector programs, bespoke minting and international distribution.",
     "evidenceUrl": "https://www.mdm-wholesale.com/collections",
-    "trackingReason": "Wholesale catalogue; official machine-readable product feed not verified.",
-    "verifiedAt": "2026-11-13"
+    "trackingReason": "Public custom catalogue readable and exposes product collection links, but no standard product feed or structured product catalogue adapter verified.",
+    "verifiedAt": "2026-11-20",
+    "dealerFeeds": [
+      {
+        "sourceId": "coin-shoppe",
+        "feedId": "agaunews-mdm-wholesale",
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/mdm/"
+      }
+    ],
+    "guideName": "MDM"
   },
   {
     "id": "emk",
@@ -732,26 +910,40 @@
   {
     "id": "powercoin",
     "name": "Power Coin",
-    "url": "https://www.powercoin.it/en/",
-    "type": "directory",
+    "url": "https://www.powercoin.it",
+    "type": "prestashop_catalog",
     "kind": "Private mint",
     "region": "Italy",
-    "coverage": "Power Coin original collector editions and international maker catalogue.",
-    "evidenceUrl": "https://www.powercoin.it/en/93-coins-by-mint",
-    "trackingReason": "Automated product-feed access could not be verified; directory only.",
-    "verifiedAt": "2026-11-13"
+    "coverage": "Direct new-product catalogue: up to four pages of 24 listings, across manufacturers. Latest 24 detail pages enrich specifications. Visible preorder and stock labels take precedence over generic schema.",
+    "evidenceUrl": "https://www.powercoin.it/en/new-products",
+    "verifiedAt": "2026-11-20",
+    "endpoint": "https://www.powercoin.it/en/new-products",
+    "currency": "EUR",
+    "maxPages": 4,
+    "limit": 24,
+    "maxDetails": 24,
+    "availabilityHtml": true,
+    "guideName": "POWERCOIN"
   },
   {
     "id": "emporium-hamburg",
     "name": "Emporium Hamburg",
-    "url": "https://emporium-hamburg.com",
-    "type": "directory",
+    "url": "https://www.muenzkurier.de",
+    "type": "retail_catalog",
     "kind": "Distributor",
     "region": "Germany",
-    "coverage": "Original bullion programs, exclusive coins and international distribution.",
-    "evidenceUrl": "https://emporium-hamburg.com",
-    "trackingReason": "Official catalogue discovered, but no compatible product feed verified.",
-    "verifiedAt": "2026-11-13"
+    "coverage": "Direct world-coin listings from Emporium Hamburg’s verified owned retailer Muenzkurier. Product microdata provides explicit retail stock, prices, images and reported brands.",
+    "evidenceUrl": "https://emporium-hamburg.com/en/mail-order-en/",
+    "verifiedAt": "2026-11-20",
+    "endpoint": "https://www.muenzkurier.de/neuheiten/neu-im-shop/weltmuenzen/",
+    "retailLinkMode": "prefix",
+    "productPathPrefix": "/p/",
+    "microdataRootClass": "product--details",
+    "maxPages": 2,
+    "maxProducts": 36,
+    "limit": 9,
+    "productTypeHint": "Coin",
+    "guideName": "EMPORIUM HAMBURG"
   },
   {
     "id": "apograph",
@@ -799,7 +991,15 @@
     "coverage": "Collector coins, gold and silver bullion, bars and published release calendars.",
     "evidenceUrl": "https://www.perthmint.com/collector-coins/information-for-coin-collectors/upcoming-coin-releases/",
     "trackingReason": "Official source verified; a dedicated catalog adapter is needed. Directory only, not automatically tracked.",
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-13",
+    "dealerFeeds": [
+      {
+        "sourceId": "coin-shoppe",
+        "feedId": "agaunews-perth-mint",
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/perth-mint/"
+      }
+    ],
+    "guideName": "PERTH MINT"
   },
   {
     "id": "royal-canadian-mint",
@@ -811,7 +1011,15 @@
     "coverage": "Canadian collector coins, bullion, premium bullion and mintages.",
     "evidenceUrl": "https://www.mint.ca/en/shop/new-releases",
     "trackingReason": "Official source verified; a dedicated catalog adapter is needed. Directory only, not automatically tracked.",
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-13",
+    "dealerFeeds": [
+      {
+        "sourceId": "coin-shoppe",
+        "feedId": "agaunews-royal-canadian-mint",
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/royal-canadian-mint/"
+      }
+    ],
+    "guideName": "ROYAL CANADIAN MINT"
   },
   {
     "id": "royal-mint",
@@ -823,7 +1031,15 @@
     "coverage": "British commemorative coins, bullion coins, minted bars and new releases.",
     "evidenceUrl": "https://www.royalmint.com/shop/new/",
     "trackingReason": "Official source verified; a dedicated catalog adapter is needed. Directory only, not automatically tracked.",
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-13",
+    "dealerFeeds": [
+      {
+        "sourceId": "coin-shoppe",
+        "feedId": "agaunews-royal-mint",
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/royal-mint/"
+      }
+    ],
+    "guideName": "ROYAL MINT"
   },
   {
     "id": "us-mint",
@@ -841,25 +1057,64 @@
     "id": "austrian-mint",
     "name": "Austrian Mint / Münze Österreich",
     "url": "https://www.muenzeoesterreich.com",
-    "type": "directory",
+    "type": "retail_catalog",
     "kind": "Sovereign mint",
     "region": "Austria",
-    "coverage": "Austrian commemoratives, Philharmonic bullion and the official issuing program.",
+    "coverage": "Direct product pages linked from the current official issuing programme; explicit retail prices and stock. Includes silver and copper editions.",
     "evidenceUrl": "https://www.muenzeoesterreich.com/en/collect/for-collectors/coin-issuing-programme",
-    "trackingReason": "Official source verified; a dedicated catalog adapter is needed. Directory only, not automatically tracked.",
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-20",
+    "endpoint": "https://www.muenzeoesterreich.com/en/collect/for-collectors/coin-issuing-programme",
+    "retailLinkMode": "prefix",
+    "retailContainerId": "main",
+    "productPathPrefix": "/en/products/",
+    "microdataRootClass": "article-detail",
+    "productImagePath": "/product_full/",
+    "descriptionIds": [
+      "product-accordion-description",
+      "product-accordion-data"
+    ],
+    "stockSignalClasses": [
+      "stock"
+    ],
+    "productTypeHint": "Coin",
+    "catalogueMaker": "Austrian Mint",
+    "maxPages": 1,
+    "maxProducts": 64,
+    "limit": 64,
+    "specContainerIds": [
+      "product-accordion-data"
+    ],
+    "guideName": "AUSTRIAN MINT"
   },
   {
     "id": "monnaie-de-paris",
     "name": "Monnaie de Paris",
     "url": "https://www.monnaiedeparis.fr",
-    "type": "directory",
+    "type": "retail_catalog",
     "kind": "Sovereign mint",
     "region": "France",
-    "coverage": "French gold, silver and base-metal collector coins and commemoratives.",
+    "coverage": "Direct public collector-coin catalogue; up to 36 front-catalogue listings per refresh. Conflicting page and structured stock signals stay unknown.",
     "evidenceUrl": "https://www.monnaiedeparis.fr/en/coins",
-    "trackingReason": "Official source verified; a dedicated catalog adapter is needed. Directory only, not automatically tracked.",
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-20",
+    "endpoint": "https://www.monnaiedeparis.fr/en/coins",
+    "retailLinkMode": "magento",
+    "maxPages": 3,
+    "maxProducts": 36,
+    "limit": 12,
+    "descriptionClasses": [
+      "description"
+    ],
+    "stockSignalClasses": [
+      "coming-soon",
+      "out-of-stock",
+      "unavailable"
+    ],
+    "subtitleClasses": [
+      "nombis-caracteristiques"
+    ],
+    "productTypeHint": "Coin",
+    "catalogueMaker": "Monnaie de Paris",
+    "guideName": "MONNAIE DE PARIS"
   },
   {
     "id": "fnmt",
@@ -902,7 +1157,15 @@
     "coverage": "Krugerrand proofs, Big Five, Natura and other precious-metal collectibles.",
     "evidenceUrl": "https://www.samint.co.za/collectable-coins/",
     "trackingReason": "Official catalog verified, but no supported product feed was found. Directory only, not automatically tracked.",
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-13",
+    "dealerFeeds": [
+      {
+        "sourceId": "coin-shoppe",
+        "feedId": "agaunews-south-african-mint",
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/south-african/"
+      }
+    ],
+    "guideName": "SOUTH AFRICAN MINT"
   },
   {
     "id": "royal-australian-mint",
@@ -914,7 +1177,15 @@
     "coverage": "Australian commemorative and circulation collector coins, proof sets and releases.",
     "evidenceUrl": "https://ramint.gov.au/collect/building-your-collection/ways-shop",
     "trackingReason": "Official source verified; eShop was unavailable during testing and needs a dedicated adapter. Directory only, not automatically tracked.",
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-13",
+    "dealerFeeds": [
+      {
+        "sourceId": "gr-reserve",
+        "feedId": "agaunews-royal-australian-mint",
+        "evidenceUrl": "https://grreserve.com/product-category/mints/royal-australian-mint/"
+      }
+    ],
+    "guideName": "ROYAL AUSTRALIAN MINT"
   },
   {
     "id": "singapore-mint",
@@ -937,8 +1208,16 @@
     "region": "China",
     "coverage": "Official Chinese precious-metal commemorative coin programs, including Panda issues.",
     "evidenceUrl": "https://en.chngc.net/group/intro/63?id=70003",
-    "trackingReason": "Official source verified; a dedicated catalog adapter is needed. Directory only, not automatically tracked.",
-    "verifiedAt": "2026-11-13"
+    "trackingReason": "The guide refers to Chinese coin issues of the People’s Bank of China, distributed by China Gold Coin. The direct site needs a dedicated reader. Separate dealer monitoring covers the Chinese Panda programme, including aftermarket versions; it is not all Chinese coinage.",
+    "verifiedAt": "2026-11-13",
+    "dealerFeeds": [
+      {
+        "sourceId": "coin-shoppe",
+        "feedId": "agaunews-china-gold-coin",
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/chinesepanda/"
+      }
+    ],
+    "guideName": "BANK OF CHINA"
   },
   {
     "id": "japan-mint",
@@ -962,19 +1241,30 @@
     "coverage": "Korean commemorative coins and medals, gold and silver bars and collectibles.",
     "evidenceUrl": "https://www.koreamint.com/index.do",
     "trackingReason": "Official source verified; a dedicated catalog adapter is needed. Directory only, not automatically tracked.",
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-13",
+    "dealerFeeds": [
+      {
+        "sourceId": "coin-shoppe",
+        "feedId": "agaunews-komsco",
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/komsco/"
+      }
+    ],
+    "guideName": "KOMSCO KOREA"
   },
   {
     "id": "coins-today",
     "name": "Coins Today",
-    "url": "https://coinstoday.co.kr",
-    "type": "directory",
-    "kind": "Dealer",
+    "url": "https://www.coinstoday.co.kr",
+    "type": "coins_today",
+    "kind": "Private mint / Dealer",
     "region": "South Korea",
-    "coverage": "Own-brand silver pieces and bars, KOMSCO and worldwide bullion/collector issues.",
-    "evidenceUrl": "https://www.coinstoday.co.kr/",
-    "trackingReason": "Official catalog verified; custom storefront requires a dedicated adapter. Directory only, not automatically tracked.",
-    "verifiedAt": "2026-11-13"
+    "coverage": "Official own-brand public catalogue, up to four pages of 48 cards. Explicit sold-out badges are recorded; absence of a badge does not establish orderability. Missing prices and stock remain unconfirmed.",
+    "evidenceUrl": "https://www.coinstoday.co.kr/index.php?menu=todayex",
+    "verifiedAt": "2026-11-20",
+    "endpoint": "https://www.coinstoday.co.kr/product/ajax_product_list.php?menu=todayex&ca_id=ALL&page=1&itemcnt=48&sorttype=new",
+    "maxPages": 4,
+    "limit": 48,
+    "guideName": "COINS TODAY"
   },
   {
     "id": "melbourne-mint",
@@ -1004,7 +1294,15 @@
     "coverage": "Gold, silver, platinum and palladium minted bars, artistic and colorized collectibles.",
     "evidenceUrl": "https://www.mkspamp.com/minted-bars",
     "trackingReason": "Official source verified; a dedicated catalog adapter is needed. Directory only, not automatically tracked.",
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-13",
+    "dealerFeeds": [
+      {
+        "sourceId": "coin-shoppe",
+        "feedId": "agaunews-pamp",
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/pamp-sa/"
+      }
+    ],
+    "guideName": "PAMP"
   },
   {
     "id": "valcambi",
@@ -1034,13 +1332,21 @@
     "id": "nz-post-collectables",
     "name": "NZ Post Collectables",
     "url": "https://collectables.nzpost.co.nz",
-    "type": "directory",
+    "type": "retail_catalog",
     "kind": "Dealer",
     "region": "New Zealand",
-    "coverage": "Official New Zealand commemorative coins, Kiwi coins, precious-metal collectibles and international coins.",
+    "coverage": "Direct official public coin catalogue and structured retail availability; up to 60 listings per refresh, including New Zealand and international releases.",
     "evidenceUrl": "https://collectables.nzpost.co.nz/coins/",
-    "trackingReason": "Official source verified; a dedicated catalog adapter is needed. Directory only, not automatically tracked.",
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-20",
+    "endpoint": "https://collectables.nzpost.co.nz/coins/",
+    "retailLinkMode": "bigcommerce",
+    "maxPages": 5,
+    "maxProducts": 60,
+    "limit": 12,
+    "specContainerIds": [
+      "tab-warranty"
+    ],
+    "guideName": "NEW ZEALAND POST"
   },
   {
     "id": "mexico-mint",
@@ -1052,7 +1358,14 @@
     "coverage": "Mexican minted coins, medals and commemorative collections.",
     "evidenceUrl": "https://www.cmm.gob.mx/cmtienda/",
     "trackingReason": "Official source verified; a dedicated catalog adapter is needed. Directory only, not automatically tracked.",
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-13",
+    "dealerFeeds": [
+      {
+        "sourceId": "coin-shoppe",
+        "feedId": "agaunews-mexico-mint",
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/banco-de-mexico/"
+      }
+    ]
   },
   {
     "id": "brazil-mint",
@@ -1245,7 +1558,7 @@
     "maxPages": 2,
     "kind": "Distributor",
     "region": "United States",
-    "coverage": "Up to 200 most recently published dealer listings. Public offer prices and stock flags; manufacturer attributes are source-reported. Bounded to 2 pages / 200 feed entries per run. Also scans a dedicated Colorized coins feed and 4 deeper catalogue pages per run in rotation, up to page 100. Limits and incomplete scans are reported; this is not complete catalogue coverage.",
+    "coverage": "Up to 200 most recently published dealer listings. Public offer prices and stock flags; manufacturer attributes are source-reported. Bounded to 2 pages / 200 feed entries per run. Also scans a dedicated Colorized coins feed and 4 deeper catalogue pages per run in rotation, up to page 100. Limits and incomplete scans are reported; this is not complete catalogue coverage. Also scans named Agaunews maker collections, each bounded to two pages / 200 dealer entries; dealer provenance is retained.",
     "evidenceUrl": "https://grreserve.com/about/",
     "verifiedAt": "2026-11-13",
     "discoveryFeeds": [
@@ -1255,12 +1568,53 @@
         "endpoint": "https://grreserve.com/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=206",
         "maxPages": 4,
         "evidenceUrl": "https://grreserve.com/product-category/collections/colorized-coins-collection/"
+      },
+      {
+        "id": "agaunews-allcollect",
+        "label": "AllCollect — dealer listings",
+        "maker": "AllCollect",
+        "endpoint": "https://grreserve.com/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=365",
+        "maxPages": 2,
+        "evidenceUrl": "https://grreserve.com/product-category/mints/allcollect/"
+      },
+      {
+        "id": "agaunews-east-india-company",
+        "label": "East India Company — dealer listings",
+        "maker": "East India Company",
+        "endpoint": "https://grreserve.com/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=265",
+        "maxPages": 2,
+        "evidenceUrl": "https://grreserve.com/product-category/mints/east-india-company/"
+      },
+      {
+        "id": "agaunews-pobjoy-mint",
+        "label": "Pobjoy Mint — dealer listings",
+        "maker": "Pobjoy Mint",
+        "endpoint": "https://grreserve.com/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=85",
+        "maxPages": 2,
+        "evidenceUrl": "https://grreserve.com/product-category/mints/pobjoy-mint/"
+      },
+      {
+        "id": "agaunews-royal-australian-mint",
+        "label": "Royal Australian Mint — dealer listings",
+        "maker": "Royal Australian Mint",
+        "endpoint": "https://grreserve.com/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=87",
+        "maxPages": 2,
+        "evidenceUrl": "https://grreserve.com/product-category/mints/royal-australian-mint/"
+      },
+      {
+        "id": "agaunews-mint-of-mk",
+        "label": "Mint of MK",
+        "endpoint": "https://grreserve.com/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=2179",
+        "maxPages": 2,
+        "evidenceUrl": "https://grreserve.com/product-category/mints/mint-of-mk/",
+        "maker": "Mint of MK / The Gold Village"
       }
     ],
     "catalogueBackfill": {
       "pagesPerRun": 4,
       "maxPage": 100
-    }
+    },
+    "guideName": "GR RESERVE"
   },
   {
     "id": "hero-bullion",
@@ -1394,7 +1748,8 @@
     "region": "Australia",
     "coverage": "Up to 500 public catalogue offers, including Melbourne Coin Co releases and other mints. Variant availability and source titles/tags drive stock and upcoming labels. Bounded to 2 pages / 500 feed entries per run.",
     "evidenceUrl": "https://melbournecoinco.com/pages/mcandcc",
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-13",
+    "guideName": "MELBOURNE COIN COMPANY"
   },
   {
     "id": "popcoins",
@@ -1420,13 +1775,18 @@
     "id": "the-coin-company",
     "name": "The Coin Company",
     "url": "https://thecoincompany.com.au",
-    "type": "directory",
+    "type": "retail_catalog",
     "kind": "Dealer",
     "region": "Australia",
-    "coverage": "Australian world-coin dealer, including independent mint and colorized releases. Visit the source for its current offers.",
-    "trackingReason": "BigCommerce storefront; no supported public Shopify/WooCommerce catalogue feed was verified. A dedicated adapter is needed.",
+    "coverage": "Direct public new-release catalogue, up to 36 recent retail listings per refresh; explicit product prices and availability.",
     "evidenceUrl": "https://thecoincompany.com.au/new-coin-releases/",
-    "verifiedAt": "2026-11-13"
+    "verifiedAt": "2026-11-20",
+    "endpoint": "https://thecoincompany.com.au/new-coin-releases/",
+    "retailLinkMode": "bigcommerce",
+    "maxPages": 3,
+    "maxProducts": 36,
+    "limit": 12,
+    "guideName": "THE COIN COMPANY"
   },
   {
     "id": "apmex",
@@ -1480,7 +1840,8 @@
     "region": "Singapore",
     "verifiedAt": "2026-11-18",
     "evidenceUrl": "https://upp.com.sg/our-story/",
-    "coverage": "Latest public product listings, bounded to four pages / 400 feed entries per run. Product-level prices and availability are seller-reported; missing stock evidence remains unknown. This is not the complete historical catalogue."
+    "coverage": "Latest public product listings, bounded to four pages / 400 feed entries per run. Product-level prices and availability are seller-reported; missing stock evidence remains unknown. This is not the complete historical catalogue.",
+    "guideName": "PRECIOUS METAL COLLECTORS"
   },
   {
     "id": "sce-coins",
@@ -1510,7 +1871,8 @@
     "region": "Lithuania",
     "verifiedAt": "2026-11-18",
     "evidenceUrl": "https://lithuanian-mint.com/shop/",
-    "coverage": "Latest public product listings, bounded to four pages / 400 feed entries per run. Product-level prices and availability are seller-reported; missing stock evidence remains unknown. This is not the complete historical catalogue. English-language feed excludes duplicate Lithuanian translations."
+    "coverage": "Latest public product listings, bounded to four pages / 400 feed entries per run. Product-level prices and availability are seller-reported; missing stock evidence remains unknown. This is not the complete historical catalogue. English-language feed excludes duplicate Lithuanian translations.",
+    "guideName": "LITHUANIAN MINT"
   },
   {
     "id": "asturmint",
@@ -1527,7 +1889,8 @@
     "retailPathSuffix": "-store/",
     "evidenceUrl": "https://asturmint.com/our-products/",
     "verifiedAt": "2026-11-18",
-    "coverage": "Direct Asturmint catalogue and retail listings. Up to 4 pages / 400 public entries per run. Catalogue originals and retail store entries are separate listings; only URLs ending -store/ expose retail availability. Catalogue stock remains unconfirmed. Seller listing dates are not verified global release dates."
+    "coverage": "Direct Asturmint catalogue and retail listings. Up to 4 pages / 400 public entries per run. Catalogue originals and retail store entries are separate listings; only URLs ending -store/ expose retail availability. Catalogue stock remains unconfirmed. Seller listing dates are not verified global release dates.",
+    "guideName": "ASTURMINT"
   },
   {
     "id": "arverni-mint",
@@ -1557,5 +1920,257 @@
     "coverage": "Direct public mint shop: gold, silver and copper coins, rounds, bars and 3D collectibles. Bounded to 4 pages / 400 entries per run; not a guarantee of complete historical catalogue coverage. Prices retain the currency reported by the storefront API, which may vary by region. Orderable does not guarantee immediate dispatch.",
     "evidenceUrl": "https://pressburgmint.com/shop/",
     "verifiedAt": "2026-11-18"
+  },
+  {
+    "id": "armageddon-mint",
+    "name": "Armageddon Mint",
+    "url": "https://armageddon-mint.myshopify.com",
+    "type": "shopify",
+    "endpoint": "https://armageddon-mint.myshopify.com/products.json?limit=250",
+    "maxPages": 4,
+    "currency": "USD",
+    "region": "United States",
+    "kind": "Private mint",
+    "evidenceUrl": "https://armageddon-mint.myshopify.com/",
+    "coverage": "Mixed own and distributed products. Preserve individual source vendor. Exclude standalone Coin Boxes product_type. Raw product6324356485 is empty packaging explicitly no coins included. Bounded public catalogue; first import is a baseline.",
+    "limit": 250,
+    "excludeTitleContains": [
+      "PREDATOR PREY Series 4-coin Box"
+    ],
+    "verifiedAt": "2026-11-20",
+    "guideName": "ARMAGEDDON MINT"
+  },
+  {
+    "id": "royal-krakow-mint",
+    "name": "Royal Krakow Mint",
+    "url": "https://royalkrakowmint.com",
+    "type": "krakow_catalog",
+    "endpoint": "https://royalkrakowmint.com/en/our-coins",
+    "maxPages": 4,
+    "limit": 15,
+    "maxProducts": 40,
+    "region": "Poland",
+    "kind": "Private mint",
+    "catalogueMaker": "Royal Krakow Mint",
+    "evidenceUrl": "https://royalkrakowmint.com/en/info/about-us",
+    "coverage": "Prices not published in catalogue; retail order redirects to partner. Availability is explicit mint catalogue statement, not checked partner inventory. Some listings represent several designs from a series; do not invent per-design entries. No source publication date; year is issue year. Bounded public catalogue; first import is a baseline.",
+    "verifiedAt": "2026-11-20",
+    "guideName": "ROYAL KRAKOW MINT"
+  },
+  {
+    "id": "artisan-coin-productions",
+    "name": "Artisan Coin Productions",
+    "url": "https://www.artisancoins.com",
+    "endpoint": "https://www.artisancoins.com/store-products-sitemap.xml",
+    "retailLinkMode": "sitemap",
+    "productPathPrefix": "/product-page/",
+    "maxPages": 1,
+    "maxProducts": 40,
+    "limit": 40,
+    "kind": "Private mint",
+    "region": "United States",
+    "catalogueMaker": "Artisan Coin Productions",
+    "productTypeHint": "Coin",
+    "evidenceUrl": "https://www.artisancoins.com",
+    "coverage": "Official public product sitemap and Product/Offer metadata. Current direct shop contains three listings; sitemap timestamps are not release dates.",
+    "type": "retail_catalog",
+    "verifiedAt": "2026-11-20",
+    "guideName": "ARTISAN COIN PRODUCTIONS"
+  },
+  {
+    "id": "tower-mint",
+    "name": "Tower Mint",
+    "url": "https://www.towermint.co.uk",
+    "type": "woocommerce",
+    "endpoint": "https://www.towermint.co.uk/wp-json/wc/store/v1/products?per_page=100&orderby=date&order=desc&category=98",
+    "maxPages": 4,
+    "limit": 100,
+    "currency": "GBP",
+    "kind": "Private mint",
+    "region": "United Kingdom",
+    "verifiedAt": "2026-11-20",
+    "evidenceUrl": "https://www.towermint.co.uk/product-category/all-coins/",
+    "coverage": "Direct public All Coins storefront feed, up to 4 pages / 400 listings; excludes its stamp catalogue. Variant availability and prices are source-reported; older tracked listings are rechecked in rotation. This is not guaranteed full catalogue coverage.",
+    "guideName": "TOWER MINT"
+  },
+  {
+    "id": "numistrade",
+    "name": "Numistrade",
+    "type": "numistrade_catalog",
+    "url": "https://numistrade.de",
+    "endpoint": "https://numistrade.de/de/neuheiten.html",
+    "catalogOnly": true,
+    "maxProducts": 40,
+    "maxPages": 1,
+    "limit": 40,
+    "catalogueMaker": "Numistrade",
+    "kind": "Private mint",
+    "region": "Germany",
+    "evidenceUrl": "https://numistrade.de/de/neuheiten.html",
+    "verifiedAt": "2026-11-20",
+    "coverage": "Direct public latest-release catalogue. Reads up to 40 linked release pages and their separately specified variants. Wholesale catalogue status does not verify retail stock; prices and publication dates remain unknown. This is not full catalogue coverage.",
+    "guideName": "NUMISTRADE"
+  },
+  {
+    "id": "central-bank-russia",
+    "name": "Bank of Russia",
+    "url": "https://www.cbr.ru",
+    "endpoint": "https://www.cbr.ru/eng/cash_circulation/memorable_coins/coins_base/",
+    "type": "cbr_catalog",
+    "catalogOnly": true,
+    "maxPages": 1,
+    "limit": 80,
+    "maxProducts": 80,
+    "detailLimit": 12,
+    "kind": "Central bank",
+    "region": "Russia",
+    "productTypeHint": "Coin",
+    "coverage": "Official current-year commemorative coin database, up to 80 rows; newest 12 details enrich specs. Exact issuer dates are separate from publication dates. No retail prices or stock.",
+    "evidenceUrl": "https://www.cbr.ru/eng/cash_circulation/memorable_coins/",
+    "verifiedAt": "2026-11-20",
+    "guideName": "CENTRAL BANK OF RUSSIA"
+  },
+  {
+    "id": "jvp-mint",
+    "name": "JVP Mint / JVP Investment",
+    "url": "https://jvp-shop.com",
+    "type": "directory",
+    "kind": "Private mint",
+    "region": "Germany",
+    "trackingReason": "Direct shop is paused and password protected. Its JVP collection at Magikos is monitored separately.",
+    "coverage": "Direct shop is paused and password protected. Its JVP collection at Magikos is monitored separately.",
+    "evidenceUrl": "https://jvp-shop.com",
+    "verifiedAt": "2026-11-20",
+    "dealerFeeds": [
+      {
+        "sourceId": "magikos-jvp",
+        "evidenceUrl": "https://magikos-coins.pl/en/373-jvp-investment"
+      }
+    ],
+    "guideName": "JVP MINT"
+  },
+  {
+    "id": "east-india-company",
+    "name": "East India Company",
+    "url": "https://www.theeastindiacompany.com",
+    "type": "directory",
+    "kind": "Private mint",
+    "region": "United Kingdom",
+    "trackingReason": "Direct collection is disallowed by published crawler rules. Separate GR Reserve collection is monitored.",
+    "coverage": "Direct collection is disallowed by published crawler rules. Separate GR Reserve collection is monitored.",
+    "evidenceUrl": "https://www.theeastindiacompany.com",
+    "verifiedAt": "2026-11-20",
+    "dealerFeeds": [
+      {
+        "sourceId": "gr-reserve",
+        "feedId": "agaunews-east-india-company",
+        "evidenceUrl": "https://grreserve.com/product-category/mints/east-india-company/"
+      }
+    ],
+    "guideName": "EAST INDIA COMPANY"
+  },
+  {
+    "id": "pobjoy-mint",
+    "name": "Pobjoy Mint",
+    "url": "https://www.pobjoy.com",
+    "type": "directory",
+    "kind": "Private mint",
+    "region": "United Kingdom",
+    "trackingReason": "Official direct coin sales ended in December 2023. Historical releases remain monitored through a separate dealer collection.",
+    "coverage": "Official direct coin sales ended in December 2023. Historical releases remain monitored through a separate dealer collection.",
+    "evidenceUrl": "https://www.pobjoy.com",
+    "verifiedAt": "2026-11-20",
+    "dealerFeeds": [
+      {
+        "sourceId": "gr-reserve",
+        "feedId": "agaunews-pobjoy-mint",
+        "evidenceUrl": "https://grreserve.com/product-category/mints/pobjoy-mint/"
+      }
+    ],
+    "guideName": "POBJOY MINT"
+  },
+  {
+    "id": "mint-of-mk",
+    "name": "Mint of MK / The Gold Village",
+    "url": "https://agaunews.com/where-to-buy-our-sponsors/",
+    "type": "directory",
+    "kind": "Private mint",
+    "region": "Not verified",
+    "trackingReason": "Official storefront affiliation has not been verified. Dedicated dealer collections are monitored. Distinct from MK Barz.",
+    "coverage": "Official storefront affiliation has not been verified. Dedicated dealer collections are monitored. Distinct from MK Barz.",
+    "evidenceUrl": "https://agaunews.com/where-to-buy-our-sponsors/",
+    "verifiedAt": "2026-11-20",
+    "dealerFeeds": [
+      {
+        "sourceId": "coin-shoppe",
+        "feedId": "agaunews-mint-of-mk",
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/the-gold-village/"
+      },
+      {
+        "sourceId": "gr-reserve",
+        "feedId": "agaunews-mint-of-mk",
+        "evidenceUrl": "https://grreserve.com/product-category/mints/mint-of-mk/"
+      }
+    ],
+    "guideName": "MINT OF MK / THE GOLD VILLAGE"
+  },
+  {
+    "id": "world-coin-appreciation",
+    "name": "World Coin Appreciation",
+    "url": "https://agaunews.com/category/mint/world-coin-appreciation/",
+    "type": "directory",
+    "kind": "Private mint",
+    "region": "Not verified",
+    "trackingReason": "No official public storefront verified. The named dealer collection is monitored separately.",
+    "coverage": "No official public storefront verified. The named dealer collection is monitored separately.",
+    "evidenceUrl": "https://agaunews.com/category/mint/world-coin-appreciation/",
+    "verifiedAt": "2026-11-20",
+    "dealerFeeds": [
+      {
+        "sourceId": "coin-shoppe",
+        "feedId": "agaunews-world-coin-appreciation",
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/world-coin-appreciation/"
+      }
+    ],
+    "guideName": "WORLD COIN APPRECIATION"
+  },
+  {
+    "name": "Banco de México",
+    "url": "https://www.banxico.org.mx",
+    "type": "directory",
+    "kind": "Central bank",
+    "region": "Mexico",
+    "evidenceUrl": "https://www.banxico.org.mx/billetes-y-monedas/comercializacion-productos-nu.html",
+    "trackingReason": "Official numismatic product program verified. Legacy Spanish HTML catalogues need a dedicated adapter; no automatic direct inventory feed established.",
+    "coverage": "Banco de México Libertad and other precious-metal commemorative coin programs. Issuer catalogue does not establish dealer stock.",
+    "id": "bank-of-mexico",
+    "verifiedAt": "2026-11-20",
+    "dealerFeeds": [
+      {
+        "sourceId": "coin-shoppe",
+        "feedId": "agaunews-mexico-mint",
+        "evidenceUrl": "https://thecoinshoppe.ca/product-category/collections/banco-de-mexico/"
+      }
+    ],
+    "guideName": "BANK OF MEXICO"
+  },
+  {
+    "id": "magikos-jvp",
+    "name": "Magikos Coins — JVP collection",
+    "url": "https://magikos-coins.pl",
+    "type": "retail_catalog",
+    "endpoint": "https://magikos-coins.pl/en/373-jvp-investment",
+    "retailLinkMode": "prefix",
+    "retailContainerId": "js-product-list",
+    "productPathPrefix": "/en/glowna/",
+    "maxProducts": 40,
+    "maxPages": 1,
+    "limit": 40,
+    "kind": "Dealer",
+    "region": "Poland",
+    "evidenceUrl": "https://magikos-coins.pl/en/373-jvp-investment",
+    "collectionMaker": "JVP Mint / JVP Investment",
+    "coverage": "Dedicated public JVP Investment dealer collection. Up to 40 product pages; source-reported retail prices and availability. Not a direct connection to the paused JVP shop.",
+    "verifiedAt": "2026-11-20"
   }
 ]
